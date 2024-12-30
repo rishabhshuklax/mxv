@@ -3,10 +3,9 @@ import MovieList from '../components/MovieList';
 
 const HomePage = (props) => {
     useEffect(() => {
-        // Scroll to the top when params.id changes
         window.scrollTo({
             top: 0,
-            behavior: "smooth", // Smooth scrolling animation
+            behavior: "smooth"
         });
     });
     return (
