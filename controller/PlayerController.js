@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { Readable } = require('stream');
 
 module.exports = {
     proxyVideo: async (req, res) => {
@@ -18,15 +19,26 @@ module.exports = {
                     'Referer': 'https://vidsrc.me/', // Required Referer for vidsrc.me
                 },
                 timeout: 10000, // Set a 10-second timeout
-                responseType: 'stream', // Stream the response directly
+                responseType: 'text', // Fetch response as text for modification
             });
+
+            // Process the response body to remove unwanted scripts
+            let body = response.data;
+
+            // Remove ad-related scripts and devtools blockers
+            body = body.replace(/<script[^>]*src=[^>]*ad[^>]*><\/script>/gi, ''); // Remove ad scripts
+            body = body.replace(/<script[^>]*disable-devtool[^>]*><\/script>/gi, ''); // Remove devtools blocker
+            body = body.replace(/<script[^>]*>(.*?)disableDevtools(.*?)<\/script>/gis, ''); // Remove inline devtools blockers
+
+            // Convert the modified body to a readable stream
+            const modifiedStream = Readable.from(body);
 
             // Set headers to forward the response content type and allow CORS
             res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('Content-Type', response.headers['content-type']);
+            res.setHeader('Content-Type', response.headers['content-type'] || 'text/html');
 
-            // Pipe the response directly to the client
-            response.data.pipe(res);
+            // Pipe the modified response directly to the client
+            modifiedStream.pipe(res);
         } catch (error) {
             console.error('Error fetching proxy content:', error.message);
 
