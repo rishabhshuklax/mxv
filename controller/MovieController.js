@@ -168,5 +168,79 @@ module.exports = {
             console.log(error);
             return res.status(500).json({error: error.message});
         });
+    },
+    getTrending: async (req, res) => {
+        let config = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: `${process.env.TMDB_API_BASE_URL}/3/trending/all/${req.query.range || 'week' }?language=en-US&page=${req.query.page || 1}&api_key=${process.env.TMDB_API_KEY}`,
+            headers: { }
+            };
+
+        axios.request(config)
+        .then((response) => {
+            const popular = response.data,
+                transformed = _.map(popular.results, (entity) => {
+                    return {
+                        ...entity,
+                        id: `${entity.media_type}~${entity.id}`
+                    }
+                });
+                
+            return res.send(transformed);
+        })
+        .catch((error) => {
+            console.log(error);
+            return res.status(500).json({error: error.message});
+        });
+    },
+    getAiringToday: async (req, res) => {
+        let config = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: `${process.env.TMDB_API_BASE_URL}/3/tv/airing_today?language=en-US&page=${req.query.page || 1}&api_key=${process.env.TMDB_API_KEY}`,
+            headers: { }
+            };
+
+        axios.request(config)
+        .then((response) => {
+            const popular = response.data,
+                transformed = _.map(popular.results, (entity) => {
+                    return {
+                        ...entity,
+                        id: `tv~${entity.id}`
+                    }
+                });
+                
+            return res.send(transformed);
+        })
+        .catch((error) => {
+            console.log(error);
+            return res.status(500).json({error: error.message});
+        });
+    },
+    discoverMovies: async (req, res) => {
+        let config = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: `${process.env.TMDB_API_BASE_URL}/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=vote_average.desc&without_genres=99,10755&vote_count.gte=200&api_key=${process.env.TMDB_API_KEY}`,
+            headers: { }
+            };
+
+        axios.request(config)
+        .then((response) => {
+            const movieList = _.map(response.data.results, (movie) => {
+                return {
+                    ...movie,
+                    id: `movie~${movie.id}`,
+                }
+            });
+
+            return res.send(movieList);
+        })
+        .catch((error) => {
+            console.log(error);
+            return res.status(500).json({error: error.message});
+        });
     }
 };

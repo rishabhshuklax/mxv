@@ -72,6 +72,19 @@ app.get('/api/entity/search', (req, res) => {
     MovieController.search(req, res);
 });
 
+
+app.get('/api/entity/trending', (req, res) => {
+  MovieController.getTrending(req, res);
+});
+
+app.get('/api/entity/airing', (req, res) => {
+  MovieController.getAiringToday(req, res);
+});
+
+app.get('/api/entity/top', (req, res) => {
+  MovieController.discoverMovies(req, res);
+});
+
 // User routes
 
   // Create a new user

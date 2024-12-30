@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+
+body {
+  /* background-color: #0c0d1b; */
+  background-color: #141522;
+  box-shadow: inset rgb(237 255 121 / 19%) 0px 0px 5em 0px;
+  /* animation: insetPulseShadow 5s cubic-bezier(0.1, -0.6, 0.2, 0) infinite; */
+}
+.main-container {
+  
+}
+.header-container {
+  display: flex;    
+}
+
+.header-title, .header-search {
+  color: #ffffff;
+  justify-content: center;
+  align-self: center;
+  text-align: center;
+}
+
+.header-search {
+  text-align: right;
+  font-weight: 800;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.header-title p {
+  /* animation: smPulseShadow 5s cubic-bezier(0.1, -0.6, 0.2, 0) infinite; */
+  /* background-color: #ffb3fc10; */
+  color: white;
+  text-decoration: underline;
+}
+
+.header-search .icon {
+  animation: pulseShadow 5s cubic-bezier(0.1, -0.6, 0.2, 0) infinite;
+  background-color: #ffb3fc10;
+  color: #ff92e0;
+}
+
+.header-misc-icon {
+  padding: 10px;
+  background-color: #f1325e;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  box-shadow: rgb(255 141 243) 0px 1px 3em 1px;
+  animation: pulseShadow 5s cubic-bezier(0.1, -0.6, 0.2, 0) infinite;
+}
+
+.header-misc-icon-search {
+  background-color: #3a8190;
+}
+
+@keyframes pulseShadow {
+  0% {
+    box-shadow: rgb(255 141 243) 0px 1px 4em 1px;
+  }
+  25% {
+    box-shadow: rgb(38, 171, 185) 0px 1px 4em 2px;
+  }
+  50% {
+    box-shadow: rgb(219, 221, 128) 0px 1px 4em 3px;
+  }
+  75% {
+    box-shadow: rgb(255, 103, 103) 0px 1px 4em 2px;
+  }
+  100% {
+    box-shadow: rgb(230, 124, 219) 0px 1px 4em 1px;
+  }
+}
+
+@keyframes smPulseShadow {
+  0% {
+    box-shadow: rgb(255 141 243) 0px 1px 10em 1px;
+  }
+  25% {
+    box-shadow: rgb(38, 171, 185) 0px 1px 10em 2px;
+  }
+  50% {
+    box-shadow: rgb(219, 221, 128) 0px 1px 10em 1px;
+  }
+  75% {
+    box-shadow: rgb(255, 103, 103) 0px 1px 10em 2px;
+  }
+  100% {
+    box-shadow: rgb(230, 124, 219) 0px 1px 10em 1px;
+  }
+}
+
+@keyframes insetPulseShadow {
+  0% {
+    box-shadow: inset rgba(121, 255, 235, 0.19) 0px 0px 15em 0px;
+  }
+  25% {
+    box-shadow: inset rgb(237 255 121 / 19%) 0px 0px 10em 0px;
+  }
+  50% {
+    box-shadow: inset rgba(181, 255, 69, 0.19) 0px 0px 5em 0px;
+  }
+  75% {
+    box-shadow: inset rgba(184, 182, 127, 0.19) 0px 0px 8em 0px;
+  }
+  100% {
+    box-shadow: inset rgb(237 255 121 / 19%) 0px 0px 15em 0px;
+  }
+}
+
+.movie-card-container {
+  border-radius: 10%;
+}
+
+.movie-card-blur-overlay-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.movie-card-blur-overlay {
+  width: 90%;
+  height: 100%;
+  border-radius: 10%;
+  background-color: #0000003a;
+  /* opacity: 0.5; */
+  position: absolute;
+  z-index: 1;
+  box-shadow: rgb(72 135 255 / 75%) 0px 0px 20em 0px
+}
