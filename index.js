@@ -87,6 +87,11 @@ app.get('/api/tonight', (req, res) => {
   MovieController.tonight(req, res);
 });
 
+// person bio + filmography
+app.get('/api/person/:id', (req, res) => {
+  MovieController.getPerson(req, res);
+});
+
 // User routes
 
   // Create a new user

@@ -969,6 +969,195 @@ main {
   animation: fadeUp 0.5s ease both;
 }
 
+/* ————— taste profile ————— */
+
+.taste-link {
+  color: var(--accent);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.taste-link:hover {
+  border-bottom-color: var(--accent);
+}
+
+.taste-verdict {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--ink);
+  max-width: 62ch;
+}
+
+.taste-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.taste-panel {
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 88px 1fr 24px;
+  align-items: center;
+  gap: 12px;
+}
+
+.bar-label {
+  font-size: 0.76rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-track {
+  height: 6px;
+  background: var(--faint);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.bar-value {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.taste-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.stat-block strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.stat-block span {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.stat-block span a {
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+
+.stat-block span a:hover {
+  border-bottom-color: var(--accent);
+}
+
+/* ————— person page ————— */
+
+.person-header {
+  display: flex;
+  gap: clamp(20px, 4vw, 44px);
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.person-portrait {
+  width: clamp(140px, 20vw, 220px);
+  aspect-ratio: 2 / 3;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.person-portrait.person-fallback {
+  display: grid;
+  place-items: center;
+  font-size: 3rem;
+}
+
+.person-bio {
+  max-width: 68ch;
+  display: -webkit-box;
+  -webkit-line-clamp: 8;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.person-credit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.person-role {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-style: italic;
+  font-family: var(--serif);
+}
+
+/* ————— collection banner ————— */
+
+.collection-banner {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0 var(--pad);
+  min-height: 160px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 !important;
+  width: calc(100% - 2 * var(--pad));
+}
+
+.collection-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.5;
+}
+
+.collection-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10, 9, 8, 0.92), rgba(10, 9, 8, 0.3));
+}
+
+.collection-content {
+  position: relative;
+  padding: 28px;
+  z-index: 1;
+}
+
+.collection-content h2 {
+  font-size: clamp(1.5rem, 3.5vw, 2.4rem);
+  margin-top: 6px;
+}
+
 /* ————— tonight: the projection booth ————— */
 
 .nav-star {

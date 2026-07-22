@@ -166,7 +166,7 @@ export default function Title() {
             <h2 className="row-title">Cast</h2>
             <div className="row-scroller">
               {d.cast.map((c) => (
-                <div key={c.credit_id || c.id} className="person">
+                <Link key={c.credit_id || c.id} to={`/person/${c.id}`} className="person">
                   {c.profile_path ? (
                     <img src={img(c.profile_path, 'w185')} alt={c.name} loading="lazy" />
                   ) : (
@@ -174,8 +174,24 @@ export default function Title() {
                   )}
                   <strong>{c.name}</strong>
                   <span>{c.character}</span>
-                </div>
+                </Link>
               ))}
+            </div>
+          </section>
+        )}
+
+        {d.belongs_to_collection && (
+          <section className="row fade-up collection-banner">
+            {d.belongs_to_collection.backdrop_path && (
+              <img
+                className="collection-bg"
+                src={img(d.belongs_to_collection.backdrop_path, 'w1280')}
+                alt=""
+              />
+            )}
+            <div className="collection-content">
+              <span className="cst-focus-label">Part of a saga</span>
+              <h2 className="display">{d.belongs_to_collection.name}</h2>
             </div>
           </section>
         )}

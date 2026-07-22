@@ -37,7 +37,9 @@ export function useWatchlist() {
         poster_path: entity.poster_path || null,
         backdrop_path: entity.backdrop_path || null,
         vote_average: entity.vote_average || 0,
-        release_date: entity.release_date || entity.first_air_date || ''
+        release_date: entity.release_date || entity.first_air_date || '',
+        genre_ids: entity.genre_ids || (entity.genres || []).map((g) => g.id),
+        addedAt: Date.now()
       });
     }
     localStorage.setItem(KEY, JSON.stringify(list));

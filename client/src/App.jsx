@@ -8,6 +8,8 @@ import Title from './pages/Title';
 import Watchlist from './pages/Watchlist';
 import Constellation from './pages/Constellation';
 import Tonight from './pages/Tonight';
+import Person from './pages/Person';
+import Taste from './pages/Taste';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -43,7 +45,9 @@ export default function App() {
           <Route path="/constellation/:compoundId" element={<Constellation />} />
           <Route path="/search" element={<Search />} />
           <Route path="/title/:compoundId" element={<Title />} />
+          <Route path="/person/:id" element={<Person />} />
           <Route path="/watchlist" element={<Watchlist />} />
+          <Route path="/taste" element={<Taste />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

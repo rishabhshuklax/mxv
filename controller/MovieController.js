@@ -144,6 +144,52 @@ module.exports = {
         }
     },
 
+    // bio + filmography, deduped and sorted so leads surface before bit parts
+    getPerson: async (req, res) => {
+        const { id } = req.params;
+        const url = `${process.env.TMDB_API_BASE_URL}/3/person/${id}?language=en-US&api_key=${process.env.TMDB_API_KEY}&append_to_response=combined_credits`;
+
+        try {
+            cache.edge(res, 1800);
+            const data = await cache.wrap(`person:${id}`, 30 * 60 * 1000, async () => {
+                const r = await axios.get(url);
+                return r.data;
+            });
+
+            const credits = [
+                ...(data.combined_credits?.cast || []),
+                ...(data.combined_credits?.crew || [])
+            ];
+            const byTitle = new Map();
+            credits.forEach((c) => {
+                if (!c.poster_path) return;
+                const type = c.media_type === 'tv' ? 'tv' : 'movie';
+                const key = `${type}~${c.id}`;
+                const role = c.character || c.job;
+                const existing = byTitle.get(key);
+                if (existing) {
+                    if (role && !existing._roles.includes(role)) existing._roles.push(role);
+                    return;
+                }
+                byTitle.set(key, { ...c, id: key, _roles: role ? [role] : [] });
+            });
+            const filmography = _.orderBy(
+                Array.from(byTitle.values()).map((c) => ({
+                    ...c,
+                    role: c._roles.slice(0, 2).join(' / ')
+                })),
+                [(c) => c.release_date || c.first_air_date || ''],
+                ['desc']
+            );
+
+            const { combined_credits: _cc, ...person } = data;
+            res.json({ ...person, filmography });
+        } catch (error) {
+            console.log(error.message);
+            res.status(error.response?.status || 500).json({ error: error.message });
+        }
+    },
+
     // The projection booth: four dials in, one confident verdict out.
     // Progressive relaxation keeps narrow dial combinations from coming up empty,
     // and a seeded shuffle makes "deal another" deterministic per seed.
