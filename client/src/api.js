@@ -14,7 +14,8 @@ export const api = {
   genres: () => get('/api/genres'),
   byGenre: (id, page = 1) => get(`/api/genres/${id}?page=${page}`),
   search: (q) => get(`/api/entity/search?query=${encodeURIComponent(q)}`),
-  extras: (type, id) => get(`/api/entity/${type}/${id}/extras`)
+  extras: (type, id) => get(`/api/entity/${type}/${id}/extras`),
+  tonight: (qs) => get(`/api/tonight?${qs}`)
 };
 
 export const img = (path, size = 'w342') =>

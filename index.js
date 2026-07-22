@@ -73,6 +73,11 @@ app.get('/api/entity/:type/:id/extras', (req, res) => {
   MovieController.getExtras(req, res);
 });
 
+// the projection booth: dial settings in, one verdict out
+app.get('/api/tonight', (req, res) => {
+  MovieController.tonight(req, res);
+});
+
 // User routes
 
   // Create a new user

@@ -23,6 +23,9 @@ export default function Nav() {
         <NavLink to="/" end>
           Home
         </NavLink>
+        <NavLink to="/tonight" className="nav-star">
+          Tonight
+        </NavLink>
         <NavLink to="/browse">Browse</NavLink>
         <NavLink to="/constellation">Constellation</NavLink>
         <NavLink to="/search">Search</NavLink>
