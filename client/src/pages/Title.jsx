@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { api, img, splitId, titleOf, yearOf } from '../api';
 import { useWatchlist, useTitle } from '../store';
 import Rating from '../components/Rating';
@@ -152,6 +152,9 @@ export default function Title() {
               <button className="btn btn-ghost" onClick={() => toggle(d)}>
                 {saved ? '♥ Saved' : '♡ Watchlist'}
               </button>
+              <Link className="btn btn-ghost" to={`/constellation/${d.id}`}>
+                ✦ Explore connections
+              </Link>
             </div>
           </div>
         </div>

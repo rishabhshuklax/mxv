@@ -24,6 +24,7 @@ export default function Nav() {
           Home
         </NavLink>
         <NavLink to="/browse">Browse</NavLink>
+        <NavLink to="/constellation">Constellation</NavLink>
         <NavLink to="/search">Search</NavLink>
         <NavLink to="/watchlist">
           Watchlist
