@@ -21,18 +21,21 @@ const PORT = 3001;  // You can choose any port
 // Define the target server and other options
 const STREAM_API_URL = process.env.STREAM_API_URL;
 
-// Proxy middleware options.
-const options = {
-  target: STREAM_API_URL,
-  changeOrigin: true
-};
-
-const apiProxy = createProxyMiddleware(options);
-
 app.use(cors());
 
-// Use the proxy to forward requests starting with /api to the STREAM_API_URL
-app.use('/vapi', apiProxy);
+// Use the proxy to forward requests starting with /vapi to the STREAM_API_URL
+if (STREAM_API_URL) {
+  const apiProxy = createProxyMiddleware({
+    target: STREAM_API_URL,
+    changeOrigin: true
+  });
+  app.use('/vapi', apiProxy);
+} else {
+  console.warn('STREAM_API_URL not set; /vapi proxy is disabled.');
+  app.use('/vapi', (req, res) => {
+    res.status(503).json({ error: 'STREAM_API_URL not configured' });
+  });
+}
 
 app.get('/video/proxy', async (req, res) => {
   PlayerController.proxyVideo(req, res);
