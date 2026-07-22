@@ -122,7 +122,11 @@ app.get('/api/entity/top', (req, res) => {
     res.status(200).json(req.user);
   });
 
-// Start the proxy server
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
-});
+// Start the proxy server (skip when running as a Vercel serverless function)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server is running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
