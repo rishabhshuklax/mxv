@@ -311,7 +311,7 @@ module.exports = {
         cache.edge(res, 300);
         let config = {
             method: 'get',
-            url: `${process.env.TMDB_API_BASE_URL}/3/search/movie?page=${req.query.page || 1}&query=${req.query.query}&api_key=${process.env.TMDB_API_KEY}`,
+            url: `${process.env.TMDB_API_BASE_URL}/3/search/movie?page=${req.query.page || 1}&query=${encodeURIComponent(req.query.query || '')}&api_key=${process.env.TMDB_API_KEY}`,
             headers: { }
         };
 
@@ -336,7 +336,7 @@ module.exports = {
             searchTv: (callback) => {
                 let config = {
                     method: 'get',
-                    url: `${process.env.TMDB_API_BASE_URL}/3/search/tv?page=${req.query.page || 1}&query=${req.query.query}&api_key=${process.env.TMDB_API_KEY}`,
+                    url: `${process.env.TMDB_API_BASE_URL}/3/search/tv?page=${req.query.page || 1}&query=${encodeURIComponent(req.query.query || '')}&api_key=${process.env.TMDB_API_KEY}`,
                     headers: { }
                 };
                 axios.request(config)
