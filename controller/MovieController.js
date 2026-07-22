@@ -63,7 +63,7 @@ module.exports = {
         }, (err, results) => {
             if (err) {
                 console.log(err);
-                res.status(500).send
+                res.status(500).json({ error: 'Failed to fetch recommendations' });
             } else {
                 res.send(results.recommendations);
             }
@@ -81,11 +81,62 @@ module.exports = {
             .then((response) => {
                 const movie = response.data;
                 res.send(movie);
-                console.log(movie);
             })
             .catch((error) => {
-            console.log(error);
+                console.log(error.message);
+                res.status(error.response?.status || 500).json({ error: error.message });
             });
+    },
+
+    // details + trailer + cast + watch providers + recommendations, one round trip
+    getExtras: async (req, res) => {
+        const { type, id } = req.params;
+        if (!['movie', 'tv'].includes(type)) {
+            return res.status(400).json({ error: 'type must be movie or tv' });
+        }
+        const region = (req.query.region || 'US').toUpperCase();
+        const url = `${process.env.TMDB_API_BASE_URL}/3/${type}/${id}?language=en-US&api_key=${process.env.TMDB_API_KEY}&append_to_response=videos,credits,watch%2Fproviders,recommendations`;
+
+        try {
+            const { data } = await axios.get(url);
+
+            const videos = data.videos?.results || [];
+            const trailer = videos
+                .filter((v) => v.site === 'YouTube' && ['Trailer', 'Teaser'].includes(v.type))
+                .sort((a, b) =>
+                    (Number(b.official) - Number(a.official)) ||
+                    ((a.type === 'Trailer' ? 0 : 1) - (b.type === 'Trailer' ? 0 : 1))
+                )[0] || null;
+
+            const cast = (data.credits?.cast || []).slice(0, 16);
+            const crew = data.credits?.crew || [];
+            const directors = crew.filter((c) => c.job === 'Director').map((c) => c.name);
+            const creators = (data.created_by || []).map((c) => c.name);
+            const providers = data['watch/providers']?.results?.[region] || null;
+            const recommendations = (data.recommendations?.results || [])
+                .slice(0, 12)
+                .map((e) => ({ ...e, id: `${e.media_type || type}~${e.id}` }));
+
+            const { videos: _v, credits: _c, recommendations: _r, ...details } = data;
+            delete details['watch/providers'];
+
+            res.json({
+                ...details,
+                id: `${type}~${data.id}`,
+                tmdbId: data.id,
+                type,
+                trailer,
+                cast,
+                directors,
+                creators,
+                providers,
+                region,
+                recommendations
+            });
+        } catch (error) {
+            console.log(error.message);
+            res.status(error.response?.status || 500).json({ error: error.message });
+        }
     },
 
     search: async (req, res) => {

@@ -1,5 +1,4 @@
 const express = require('express');
-const { createProxyMiddleware } = require('http-proxy-middleware');
 const cors = require('cors');
 require('dotenv').config();
 const MovieController = require('./controller/MovieController'),
@@ -7,38 +6,18 @@ const MovieController = require('./controller/MovieController'),
   authenticateToken = require('./middleware/authenticate');
 const userInPathMiddleware = require('./middleware/userInPath.js');
 const DiscoverController = require('./controller/DiscoverController.js');
-const PlayerController = require('./controller/PlayerController.js');
 
-  // initialize mongodb
-  require('./init/db.js');
-
+// initialize mongodb
+require('./init/db.js');
 
 const app = express();
 app.use(express.json());
-
-const PORT = 3001;  // You can choose any port
-
-// Define the target server and other options
-const STREAM_API_URL = process.env.STREAM_API_URL;
-
 app.use(cors());
 
-// Use the proxy to forward requests starting with /vapi to the STREAM_API_URL
-if (STREAM_API_URL) {
-  const apiProxy = createProxyMiddleware({
-    target: STREAM_API_URL,
-    changeOrigin: true
-  });
-  app.use('/vapi', apiProxy);
-} else {
-  console.warn('STREAM_API_URL not set; /vapi proxy is disabled.');
-  app.use('/vapi', (req, res) => {
-    res.status(503).json({ error: 'STREAM_API_URL not configured' });
-  });
-}
+const PORT = process.env.PORT || 3001;
 
-app.get('/video/proxy', async (req, res) => {
-  PlayerController.proxyVideo(req, res);
+app.get('/', (req, res) => {
+  res.json({ name: 'mxv-api', status: 'ok' });
 });
 
 // get all movies
@@ -88,6 +67,12 @@ app.get('/api/entity/top', (req, res) => {
   MovieController.discoverMovies(req, res);
 });
 
+// everything a detail page needs in one call: details, trailer, cast,
+// watch providers and recommendations
+app.get('/api/entity/:type/:id/extras', (req, res) => {
+  MovieController.getExtras(req, res);
+});
+
 // User routes
 
   // Create a new user
@@ -125,7 +110,7 @@ app.get('/api/entity/top', (req, res) => {
     res.status(200).json(req.user);
   });
 
-// Start the proxy server (skip when running as a Vercel serverless function)
+// Start the server (skip when running as a Vercel serverless function)
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Server is running at http://localhost:${PORT}`);
