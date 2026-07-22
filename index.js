@@ -20,6 +20,15 @@ app.get('/', (req, res) => {
   res.json({ name: 'mxv-api', status: 'ok' });
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    time: new Date().toISOString(),
+    tmdbConfigured: Boolean(process.env.TMDB_API_KEY),
+    mongoConfigured: Boolean(process.env.MONGODB_URI)
+  });
+});
+
 // get all movies
 app.get('/api/movie/recommend', (req, res) => {
     MovieController.recommend(req, res);

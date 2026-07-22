@@ -1,11 +1,12 @@
 const _ = require('lodash');
 const axios = require('axios');
 const async = require('async');
+const cache = require('../lib/cache');
 
 // Express Controller for Movie related things
 module.exports = {
     recommend: async (req, res) => {
-        console.log("Inside recommended")
+        cache.edge(res, 180);
         let latestMovieReqConfig = {
             method: 'get',
             maxBodyLength: Infinity,
@@ -70,7 +71,7 @@ module.exports = {
         });
     },
     getMovie: async (req, res) => {
-        console.log('inside getMovie');
+        cache.edge(res, 3600);
         let config = {
             method: 'get',
             maxBodyLength: Infinity,
@@ -98,7 +99,11 @@ module.exports = {
         const url = `${process.env.TMDB_API_BASE_URL}/3/${type}/${id}?language=en-US&api_key=${process.env.TMDB_API_KEY}&append_to_response=videos,credits,watch%2Fproviders,recommendations`;
 
         try {
-            const { data } = await axios.get(url);
+            cache.edge(res, 1800);
+            const data = await cache.wrap(`extras:${type}:${id}`, 30 * 60 * 1000, async () => {
+                const r = await axios.get(url);
+                return r.data;
+            });
 
             const videos = data.videos?.results || [];
             const trailer = videos
@@ -171,37 +176,45 @@ module.exports = {
             hidden: { gte: 50, lte: 900, sort: 'vote_average.desc', word: 'far off the beaten path' }
         };
 
-        const mood = MOODS[req.query.mood] || MOODS.strange;
-        const era = ERAS[req.query.era] || ERAS.any;
-        const length = LENGTHS[req.query.length] || LENGTHS.standard;
-        const path = PATHS[req.query.path] || PATHS.balanced;
+        const moodKey = MOODS[req.query.mood] ? req.query.mood : 'strange';
+        const eraKey = ERAS[req.query.era] ? req.query.era : 'any';
+        const lengthKey = LENGTHS[req.query.length] ? req.query.length : 'standard';
+        const pathKey = PATHS[req.query.path] ? req.query.path : 'balanced';
+        const mood = MOODS[moodKey];
+        const era = ERAS[eraKey];
+        const length = LENGTHS[lengthKey];
+        const path = PATHS[pathKey];
         const seed = parseInt(req.query.seed, 10) || Date.now();
+        cache.edge(res, 600);
 
         const attempt = async (relax) => {
-            const params = new URLSearchParams({
-                include_adult: 'false',
-                language: 'en-US',
-                sort_by: path.sort,
-                api_key: process.env.TMDB_API_KEY,
-                with_genres: mood.genres,
-                'vote_count.gte': String(path.gte)
+            const cacheKey = `tonight:${moodKey}:${eraKey}:${lengthKey}:${pathKey}:${relax}`;
+            return cache.wrap(cacheKey, 10 * 60 * 1000, async () => {
+                const params = new URLSearchParams({
+                    include_adult: 'false',
+                    language: 'en-US',
+                    sort_by: path.sort,
+                    api_key: process.env.TMDB_API_KEY,
+                    with_genres: mood.genres,
+                    'vote_count.gte': String(path.gte)
+                });
+                if (relax < 3 && path.lte) params.set('vote_count.lte', String(path.lte));
+                if (relax < 2) {
+                    if (era.gte) params.set('primary_release_date.gte', era.gte);
+                    if (era.lte) params.set('primary_release_date.lte', era.lte);
+                }
+                if (relax < 1) {
+                    if (length.gte) params.set('with_runtime.gte', String(length.gte));
+                    if (length.lte) params.set('with_runtime.lte', String(length.lte));
+                }
+                const base = `${process.env.TMDB_API_BASE_URL}/3/discover/movie?${params.toString()}`;
+                const pages = await Promise.all(
+                    [1, 2].map((pg) =>
+                        axios.get(`${base}&page=${pg}`).then((r) => r.data.results || []).catch(() => [])
+                    )
+                );
+                return pages.flat().filter((m) => m.poster_path && m.backdrop_path && m.overview);
             });
-            if (relax < 3 && path.lte) params.set('vote_count.lte', String(path.lte));
-            if (relax < 2) {
-                if (era.gte) params.set('primary_release_date.gte', era.gte);
-                if (era.lte) params.set('primary_release_date.lte', era.lte);
-            }
-            if (relax < 1) {
-                if (length.gte) params.set('with_runtime.gte', String(length.gte));
-                if (length.lte) params.set('with_runtime.lte', String(length.lte));
-            }
-            const base = `${process.env.TMDB_API_BASE_URL}/3/discover/movie?${params.toString()}`;
-            const pages = await Promise.all(
-                [1, 2].map((pg) =>
-                    axios.get(`${base}&page=${pg}`).then((r) => r.data.results || []).catch(() => [])
-                )
-            );
-            return pages.flat().filter((m) => m.poster_path && m.backdrop_path && m.overview);
         };
 
         try {
@@ -254,6 +267,7 @@ module.exports = {
     },
 
     search: async (req, res) => {
+        cache.edge(res, 300);
         let config = {
             method: 'get',
             url: `${process.env.TMDB_API_BASE_URL}/3/search/movie?page=${req.query.page || 1}&query=${req.query.query}&api_key=${process.env.TMDB_API_KEY}`,
@@ -317,6 +331,7 @@ module.exports = {
     },
 
     getTv: async (req, res) => {
+        cache.edge(res, 3600);
         let config = {
             method: 'get',
             maxBodyLength: Infinity,
@@ -335,6 +350,7 @@ module.exports = {
         });
     },
     getTrending: async (req, res) => {
+        cache.edge(res, 300);
         let config = {
             method: 'get',
             maxBodyLength: Infinity,
@@ -360,6 +376,7 @@ module.exports = {
         });
     },
     getAiringToday: async (req, res) => {
+        cache.edge(res, 300);
         let config = {
             method: 'get',
             maxBodyLength: Infinity,
@@ -385,6 +402,7 @@ module.exports = {
         });
     },
     discoverMovies: async (req, res) => {
+        cache.edge(res, 600);
         let config = {
             method: 'get',
             maxBodyLength: Infinity,
