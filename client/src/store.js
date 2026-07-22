@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { titleOf } from './api';
+import { titleOf } from './api.js';
 
 const KEY = 'mxv.watchlist.v1';
 const EVENT = 'mxv:watchlist';
@@ -11,6 +11,28 @@ const read = () => {
     return [];
   }
 };
+
+// Pure list-mutation logic, split out from the hook so it can be unit
+// tested without a React renderer.
+export function toggleInList(list, entity) {
+  const i = list.findIndex((x) => x.id === entity.id);
+  if (i >= 0) {
+    return [...list.slice(0, i), ...list.slice(i + 1)];
+  }
+  return [
+    {
+      id: entity.id,
+      title: titleOf(entity),
+      poster_path: entity.poster_path || null,
+      backdrop_path: entity.backdrop_path || null,
+      vote_average: entity.vote_average || 0,
+      release_date: entity.release_date || entity.first_air_date || '',
+      genre_ids: entity.genre_ids || (entity.genres || []).map((g) => g.id),
+      addedAt: Date.now()
+    },
+    ...list
+  ];
+}
 
 export function useWatchlist() {
   const [items, setItems] = useState(read);
@@ -26,22 +48,7 @@ export function useWatchlist() {
   }, []);
 
   const toggle = (entity) => {
-    const list = read();
-    const i = list.findIndex((x) => x.id === entity.id);
-    if (i >= 0) {
-      list.splice(i, 1);
-    } else {
-      list.unshift({
-        id: entity.id,
-        title: titleOf(entity),
-        poster_path: entity.poster_path || null,
-        backdrop_path: entity.backdrop_path || null,
-        vote_average: entity.vote_average || 0,
-        release_date: entity.release_date || entity.first_air_date || '',
-        genre_ids: entity.genre_ids || (entity.genres || []).map((g) => g.id),
-        addedAt: Date.now()
-      });
-    }
+    const list = toggleInList(read(), entity);
     localStorage.setItem(KEY, JSON.stringify(list));
     window.dispatchEvent(new Event(EVENT));
   };
@@ -63,18 +70,27 @@ const readRecent = () => {
   }
 };
 
+// Pure list-mutation logic, split out so it can be unit tested without a
+// React renderer or a real localStorage.
+export function recordViewInList(list, entity, max = RECENT_MAX) {
+  const deduped = list.filter((x) => x.id !== entity.id);
+  return [
+    {
+      id: entity.id,
+      title: titleOf(entity),
+      poster_path: entity.poster_path || null,
+      backdrop_path: entity.backdrop_path || null,
+      vote_average: entity.vote_average || 0,
+      release_date: entity.release_date || entity.first_air_date || ''
+    },
+    ...deduped
+  ].slice(0, max);
+}
+
 export function recordView(entity) {
   if (!entity?.id) return;
-  const list = readRecent().filter((x) => x.id !== entity.id);
-  list.unshift({
-    id: entity.id,
-    title: titleOf(entity),
-    poster_path: entity.poster_path || null,
-    backdrop_path: entity.backdrop_path || null,
-    vote_average: entity.vote_average || 0,
-    release_date: entity.release_date || entity.first_air_date || ''
-  });
-  localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)));
+  const list = recordViewInList(readRecent(), entity);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(list));
   window.dispatchEvent(new Event(RECENT_EVENT));
 }
 

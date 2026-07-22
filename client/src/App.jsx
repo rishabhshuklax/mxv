@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import Nav from './components/Nav';
 import ShortcutsLayer from './components/ShortcutsLayer';
+import ErrorBoundary from './components/ErrorBoundary';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import Search from './pages/Search';
@@ -18,6 +19,13 @@ function ScrollToTop() {
     window.scrollTo(0, 0);
   }, [pathname]);
   return null;
+}
+
+// Keyed by pathname so a crash on one page doesn't stay tripped after
+// navigating away — the boundary remounts fresh on every route change.
+function RouteBoundary({ children }) {
+  const { pathname } = useLocation();
+  return <ErrorBoundary key={pathname}>{children}</ErrorBoundary>;
 }
 
 function NotFound() {
@@ -39,19 +47,21 @@ export default function App() {
       <ShortcutsLayer />
       <Nav />
       <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/tonight" element={<Tonight />} />
-          <Route path="/browse" element={<Browse />} />
-          <Route path="/constellation" element={<Constellation />} />
-          <Route path="/constellation/:compoundId" element={<Constellation />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/title/:compoundId" element={<Title />} />
-          <Route path="/person/:id" element={<Person />} />
-          <Route path="/watchlist" element={<Watchlist />} />
-          <Route path="/taste" element={<Taste />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <RouteBoundary>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/tonight" element={<Tonight />} />
+            <Route path="/browse" element={<Browse />} />
+            <Route path="/constellation" element={<Constellation />} />
+            <Route path="/constellation/:compoundId" element={<Constellation />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/title/:compoundId" element={<Title />} />
+            <Route path="/person/:id" element={<Person />} />
+            <Route path="/watchlist" element={<Watchlist />} />
+            <Route path="/taste" element={<Taste />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </RouteBoundary>
       </main>
       <footer className="footer">
         <span className="brand-mark small">MXV</span>
