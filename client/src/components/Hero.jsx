@@ -30,7 +30,7 @@ export default function Hero({ items }) {
       />
       <div className="hero-shade" />
       <div className="hero-content" key={`c-${item.id}`}>
-        <p className="kicker">Trending now</p>
+        <p className="kicker">In the spotlight</p>
         <h1 className="display">{titleOf(item)}</h1>
         <div className="chips">
           <span className="chip chip-type">{isTv ? 'Series' : 'Film'}</span>
@@ -47,15 +47,21 @@ export default function Hero({ items }) {
           </button>
         </div>
       </div>
-      <div className="hero-dots">
-        {items.map((e, n) => (
-          <button
-            key={e.id}
-            className={n === i % items.length ? 'on' : ''}
-            onClick={() => setI(n)}
-            aria-label={`Spotlight ${n + 1}`}
-          />
-        ))}
+      <div className="hero-index">
+        <span className="hero-count">
+          {String((i % items.length) + 1).padStart(2, '0')} /{' '}
+          {String(items.length).padStart(2, '0')}
+        </span>
+        <div className="hero-dots">
+          {items.map((e, n) => (
+            <button
+              key={e.id}
+              className={n === i % items.length ? 'on' : ''}
+              onClick={() => setI(n)}
+              aria-label={`Spotlight ${n + 1}`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
