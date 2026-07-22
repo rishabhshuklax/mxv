@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api, img, splitId, titleOf, yearOf } from '../api';
-import { useWatchlist, useTitle } from '../store';
+import { useWatchlist, useTitle, recordView } from '../store';
 import Rating from '../components/Rating';
 import Row from '../components/Row';
 
@@ -69,7 +69,11 @@ export default function Title() {
     let on = true;
     api
       .extras(type, id)
-      .then((data) => on && setD(data))
+      .then((data) => {
+        if (!on) return;
+        setD(data);
+        recordView(data);
+      })
       .catch((e) => on && setErr(e.message));
     return () => {
       on = false;

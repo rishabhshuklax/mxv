@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import Nav from './components/Nav';
+import ShortcutsLayer from './components/ShortcutsLayer';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import Search from './pages/Search';
@@ -35,6 +36,7 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
+      <ShortcutsLayer />
       <Nav />
       <main>
         <Routes>
@@ -61,6 +63,7 @@ export default function App() {
           This product uses the TMDB API but is not endorsed or certified by TMDB. Watch
           provider data by JustWatch.
         </p>
+        <p className="attribution">Press ? for keyboard shortcuts.</p>
       </footer>
     </>
   );

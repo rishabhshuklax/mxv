@@ -1541,6 +1541,63 @@ main {
   }
 }
 
+/* ————— shortcuts ————— */
+
+.shortcuts-card {
+  width: min(360px, 100%);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 28px;
+  animation: fadeUp 0.25s ease;
+}
+
+.shortcuts-card dl {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px 14px;
+  margin-top: 16px;
+}
+
+.shortcuts-card dt {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 2px 0;
+  font-size: 0.85rem;
+}
+
+.shortcuts-card dd {
+  font-size: 0.85rem;
+  color: var(--ink);
+  align-self: center;
+}
+
+/* ————— constellation skip link ————— */
+
+.cst-skip {
+  position: absolute;
+  left: -9999px;
+  top: 12px;
+  z-index: 20;
+  background: var(--ink);
+  color: var(--ink-deep);
+  padding: 10px 16px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+
+.cst-skip:focus {
+  left: var(--pad);
+}
+
 /* ————— footer ————— */
 
 .footer {

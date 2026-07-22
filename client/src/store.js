@@ -51,6 +51,47 @@ export function useWatchlist() {
   return { items, toggle, has };
 }
 
+const RECENT_KEY = 'mxv.recent.v1';
+const RECENT_EVENT = 'mxv:recent';
+const RECENT_MAX = 14;
+
+const readRecent = () => {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY)) || [];
+  } catch {
+    return [];
+  }
+};
+
+export function recordView(entity) {
+  if (!entity?.id) return;
+  const list = readRecent().filter((x) => x.id !== entity.id);
+  list.unshift({
+    id: entity.id,
+    title: titleOf(entity),
+    poster_path: entity.poster_path || null,
+    backdrop_path: entity.backdrop_path || null,
+    vote_average: entity.vote_average || 0,
+    release_date: entity.release_date || entity.first_air_date || ''
+  });
+  localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)));
+  window.dispatchEvent(new Event(RECENT_EVENT));
+}
+
+export function useRecentlyViewed() {
+  const [items, setItems] = useState(readRecent);
+  useEffect(() => {
+    const sync = () => setItems(readRecent());
+    window.addEventListener(RECENT_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(RECENT_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  return items;
+}
+
 export function useTitle(title) {
   useEffect(() => {
     document.title = title ? `${title} · MXV` : 'MXV — find your next obsession';

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
-import { useTitle } from '../store';
+import { useTitle, useRecentlyViewed } from '../store';
 import Hero from '../components/Hero';
 import Row from '../components/Row';
 
@@ -8,6 +8,7 @@ export default function Home() {
   useTitle('');
   const [data, setData] = useState({});
   const [failed, setFailed] = useState(false);
+  const recent = useRecentlyViewed();
 
   useEffect(() => {
     let on = true;
@@ -44,6 +45,7 @@ export default function Home() {
     <>
       <Hero items={spotlight} />
       <div className="rows">
+        {recent.length > 0 && <Row title="Pick up where you left off" items={recent} />}
         <Row title="Trending this week" items={data.trending} />
         <Row title="Now playing & on air" items={data.fresh} />
         <Row title="Critically adored" items={data.top} />
