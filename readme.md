@@ -1,6 +1,8 @@
 ## MxV
 A movie streaming api + web-client + ios-client
 
+> Also in this repo: [`weather/`](weather/) — **Ultimate Weather**, a standalone React webapp with animated skies, minutely rain nowcasts, and plain-language insights. Live at https://ultimate-weather-mocha.vercel.app
+
 ##### To set up this project, follow these steps:
 
 1. Clone the repository to your local machine using the command: `git clone git@github.com:rishabhshuklax/mxv.git`.
