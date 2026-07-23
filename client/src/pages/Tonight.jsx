@@ -1,12 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, img, splitId, titleOf, yearOf } from '../api';
 import { useWatchlist, useTitle } from '../store';
 import PosterCard from '../components/PosterCard';
 
-// The projection booth. Four dials, one verdict — the anti-scroll.
+// The projection booth. Five dials, one verdict — the anti-scroll.
 
 const DIALS = [
+  {
+    key: 'format',
+    label: 'Format',
+    options: [
+      ['film', 'a film'],
+      ['series', 'a series'],
+      ['either', 'surprise me']
+    ]
+  },
   {
     key: 'mood',
     label: 'Mood',
@@ -52,38 +61,56 @@ const DIALS = [
   }
 ];
 
+const DEALT_CAP = 40;
+
 export default function Tonight() {
   useTitle('Tonight');
   const [phase, setPhase] = useState('booth'); // booth | rolling | verdict
   const [choices, setChoices] = useState({
+    format: 'film',
     mood: 'strange',
     era: 'any',
     length: 'standard',
     path: 'balanced'
   });
   const [count, setCount] = useState(3);
+  const [quick, setQuick] = useState(false);
   const [result, setResult] = useState(null);
   const [extras, setExtras] = useState(null);
   const [showTrailer, setShowTrailer] = useState(false);
   const [error, setError] = useState(false);
   const { has, toggle } = useWatchlist();
 
-  const roll = async (seedOverride) => {
+  // titles already dealt for the current brief — rerolls exclude these so
+  // "deal another" always deals something new
+  const dealtRef = useRef(new Set());
+  useEffect(() => {
+    dealtRef.current.clear();
+  }, [choices]);
+
+  const roll = async (seedOverride, reroll = false) => {
     setError(false);
     setExtras(null);
     setShowTrailer(false);
+    setQuick(reroll);
     setPhase('rolling');
-    setCount(3);
-    setTimeout(() => setCount(2), 650);
-    setTimeout(() => setCount(1), 1300);
+    if (!reroll) {
+      setCount(3);
+      setTimeout(() => setCount(2), 650);
+      setTimeout(() => setCount(1), 1300);
+    }
 
-    const q = new URLSearchParams({
+    const params = {
       ...choices,
       seed: String(seedOverride ?? Math.floor(Math.random() * 1e9))
-    });
+    };
+    if (dealtRef.current.size) {
+      params.exclude = [...dealtRef.current].slice(-DEALT_CAP).join(',');
+    }
+    const q = new URLSearchParams(params);
     const [data] = await Promise.all([
       api.tonight(q.toString()).catch(() => null),
-      new Promise((r) => setTimeout(r, 1950))
+      new Promise((r) => setTimeout(r, reroll ? 700 : 1950))
     ]);
 
     if (!data || !data.feature) {
@@ -91,6 +118,7 @@ export default function Tonight() {
       setError(true);
       return;
     }
+    [data.feature, ...(data.understudies || [])].forEach((e) => dealtRef.current.add(e.id));
     setResult(data);
     setPhase('verdict');
     const { type, id } = splitId(data.feature.id);
@@ -98,21 +126,43 @@ export default function Tonight() {
   };
 
   const feature = result?.feature;
+  const remaining = result ? Math.max(result.poolSize - dealtRef.current.size, 0) : 0;
+
+  const lengthChip = () => {
+    if (extras?.runtime) {
+      return `${Math.floor(extras.runtime / 60)}h ${extras.runtime % 60}m`;
+    }
+    if (extras?.number_of_seasons) {
+      const s = extras.number_of_seasons;
+      return `${s} season${s === 1 ? '' : 's'}`;
+    }
+    return null;
+  };
 
   return (
     <>
       {phase !== 'verdict' && (
         <div className="page-pad tonight">
           <p className="kicker">The projection booth</p>
-          <h1 className="page-title display">One film. No scrolling.</h1>
+          <h1 className="page-title display">One pick. No scrolling.</h1>
           <p className="page-sub">
-            The average viewer loses twenty minutes a night to the feed. Set four dials
-            instead — we make the call. One feature, two understudies, no feed.
+            The average viewer loses twenty minutes a night to the feed. Set five dials —
+            film or series — and we make the call. One feature, two understudies, no feed.
           </p>
           <div className="booth">
             {DIALS.map((d) => (
-              <div key={d.key} className="dial">
-                <span className="dial-label">{d.label}</span>
+              <div
+                key={d.key}
+                className={`dial ${
+                  choices.format === 'series' && d.key === 'length' ? 'dial-off' : ''
+                }`}
+              >
+                <span className="dial-label">
+                  {d.label}
+                  {choices.format === 'series' && d.key === 'length' && (
+                    <em className="dial-note"> — series set their own pace</em>
+                  )}
+                </span>
                 <div className="dial-options">
                   {d.options.map(([val, label]) => (
                     <button
@@ -142,9 +192,11 @@ export default function Tonight() {
         <div className="leader" aria-hidden="true">
           <div className="leader-disc">
             <div className="leader-hand" />
-            <span className="leader-num display">{count}</span>
+            <span className="leader-num display">{quick ? '↻' : count}</span>
           </div>
-          <p className="leader-cap">composing tonight's programme…</p>
+          <p className="leader-cap">
+            {quick ? 're-dealing…' : "composing tonight's programme…"}
+          </p>
         </div>
       )}
 
@@ -159,11 +211,7 @@ export default function Tonight() {
             <p className="verdict-reason">Because you asked for {result.reason}.</p>
             <div className="chips">
               <span className="chip">{yearOf(feature)}</span>
-              {extras?.runtime ? (
-                <span className="chip">
-                  {Math.floor(extras.runtime / 60)}h {extras.runtime % 60}m
-                </span>
-              ) : null}
+              {lengthChip() && <span className="chip">{lengthChip()}</span>}
               <span className="chip">★ {(feature.vote_average || 0).toFixed(1)}</span>
             </div>
             <p className="overview">{feature.overview}</p>
@@ -181,11 +229,17 @@ export default function Tonight() {
               </button>
               <button
                 className="btn btn-ghost"
-                onClick={() => roll((result.seed || 0) + 1)}
+                onClick={() => roll((result.seed || 0) + 1, true)}
               >
                 ↻ Deal another
               </button>
             </div>
+            {remaining > 0 && (
+              <p className="vault-note">
+                {remaining} more title{remaining === 1 ? '' : 's'} in the vault for this
+                brief — every deal is fresh.
+              </p>
+            )}
 
             {result.understudies?.length > 0 && (
               <div className="understudies">

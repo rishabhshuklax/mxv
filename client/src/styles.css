@@ -1348,12 +1348,34 @@ main {
 
 .understudies-cards {
   display: flex;
+  flex-wrap: wrap;
   gap: 20px;
   margin-top: 16px;
 }
 
 .understudies-cards .card {
   width: 132px;
+}
+
+.dial-off .dial-options {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.dial-note {
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.vault-note {
+  margin-top: 18px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: var(--muted);
 }
 
 .back-booth {
