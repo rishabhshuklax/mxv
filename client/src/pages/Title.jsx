@@ -144,8 +144,11 @@ export default function Title() {
               </p>
             )}
             <div className="hero-actions">
+              <Link className="btn btn-primary" to={`/watch/${type}~${id}`}>
+                ▶ Watch now
+              </Link>
               {d.trailer && (
-                <button className="btn btn-primary" onClick={() => setShowTrailer(true)}>
+                <button className="btn btn-ghost" onClick={() => setShowTrailer(true)}>
                   ▶ Watch trailer
                 </button>
               )}

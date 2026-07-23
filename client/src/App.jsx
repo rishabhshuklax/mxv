@@ -8,6 +8,7 @@ import Title from './pages/Title';
 import Watchlist from './pages/Watchlist';
 import Constellation from './pages/Constellation';
 import Tonight from './pages/Tonight';
+import Watch from './pages/Watch';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/constellation/:compoundId" element={<Constellation />} />
           <Route path="/search" element={<Search />} />
           <Route path="/title/:compoundId" element={<Title />} />
+          <Route path="/watch/:compoundId" element={<Watch />} />
           <Route path="/watchlist" element={<Watchlist />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -50,8 +52,8 @@ export default function App() {
       <footer className="footer">
         <span className="brand-mark small">MXV</span>
         <p>
-          A discovery engine — trailers, ratings and where to watch. No streaming here,
-          just taste.
+          A discovery engine for trailers, ratings, where to watch — and a focused
+          screening room when it is time to press play.
         </p>
         <p className="attribution">
           This product uses the TMDB API but is not endorsed or certified by TMDB. Watch

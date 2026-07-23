@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useWatchlist } from '../store';
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const { items } = useWatchlist();
+  const { pathname } = useLocation();
+  const isWatchRoute = pathname.startsWith('/watch/');
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -14,7 +16,9 @@ export default function Nav() {
   }, []);
 
   return (
-    <header className={`nav ${scrolled ? 'scrolled' : ''}`}>
+    <header
+      className={`nav ${scrolled ? 'scrolled' : ''} ${isWatchRoute ? 'watch-nav' : ''}`}
+    >
       <Link to="/" className="brand">
         <span className="brand-mark">MXV</span>
         <span className="brand-tag">find your next obsession</span>
