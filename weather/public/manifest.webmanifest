@@ -1,0 +1,12 @@
+{
+  "name": "Ultimate Weather",
+  "short_name": "Weather",
+  "description": "Live conditions, hourly and 7-day forecasts, air quality, and instant location search.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e1730",
+  "theme_color": "#0e1730",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
