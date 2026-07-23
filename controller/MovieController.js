@@ -202,15 +202,17 @@ module.exports = {
             series: { word: 'a series' },
             either: { word: 'film or series' }
         };
+        // genre lists are pipe-joined: TMDB treats "a,b" as AND (must have every
+        // genre) but "a|b" as OR — commas here silently starve multi-genre pools
         const MOODS = {
-            electric: { genres: '28,53', tv: '10759', word: 'something electric' },
+            electric: { genres: '28|53', tv: '10759', word: 'something electric' },
             funny: { genres: '35', tv: '35', word: 'something funny' },
-            tender: { genres: '10749,18', tv: '18', word: 'something tender' },
-            dark: { genres: '27,80,53', tv: '80,9648', word: 'something dark' },
-            strange: { genres: '878,14,9648', tv: '10765,9648', word: 'something strange' },
-            epic: { genres: '12,14,36,10752', tv: '10759,10765,10768', word: 'something epic' },
-            true: { genres: '99,36', tv: '99', word: 'something true' },
-            childlike: { genres: '16,10751', tv: '16,10762,10751', word: 'something childlike' }
+            tender: { genres: '10749|18', tv: '18', word: 'something tender' },
+            dark: { genres: '27|80|53', tv: '80|9648', word: 'something dark' },
+            strange: { genres: '878|14|9648', tv: '10765|9648', word: 'something strange' },
+            epic: { genres: '12|14|36|10752', tv: '10759|10765|10768', word: 'something epic' },
+            true: { genres: '99|36', tv: '99', word: 'something true' },
+            childlike: { genres: '16|10751', tv: '16|10762|10751', word: 'something childlike' }
         };
         const ERAS = {
             any: { word: 'from any era' },

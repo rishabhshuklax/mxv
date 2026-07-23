@@ -72,7 +72,7 @@ test('series brief queries discover/tv with tv genres, air dates, and no runtime
   );
   assert.ok(seenUrls.every((u) => u.includes('/discover/tv')), 'series brief must only hit discover/tv');
   const first = seenUrls[0];
-  assert.ok(first.includes('with_genres=10765%2C9648'), 'strange must map to tv genre ids');
+  assert.ok(first.includes('with_genres=10765%7C9648'), 'strange must map to OR-joined tv genre ids');
   assert.ok(first.includes('first_air_date.gte=2016-01-01'), 'era must map to first_air_date for tv');
   assert.ok(!first.includes('with_runtime'), 'tv queries must never carry runtime constraints');
   assert.ok(first.includes('vote_count.gte=150'), 'tv must use the scaled-down vote threshold');
@@ -80,7 +80,7 @@ test('series brief queries discover/tv with tv genres, air dates, and no runtime
 });
 
 test('either brief merges film and tv pools with correctly prefixed ids', async () => {
-  const { body } = await run(
+  const { body, seenUrls } = await run(
     { format: 'either', mood: 'dark', era: 'any', length: 'standard', path: 'crowd', seed: '11' },
     (url) => {
       if (!url.includes('&page=1')) return [];
@@ -88,6 +88,11 @@ test('either brief merges film and tv pools with correctly prefixed ids', async 
         ? Array.from({ length: 15 }, (_, i) => entity(500 + i, 8.0, 5000))
         : Array.from({ length: 15 }, (_, i) => entity(600 + i, 8.0, 5000));
     }
+  );
+  const movieUrl = seenUrls.find((u) => u.includes('/discover/movie'));
+  assert.ok(
+    movieUrl.includes('with_genres=27%7C80%7C53'),
+    'multi-genre moods must OR genres with pipes, not AND with commas'
   );
   const all = [body.feature, ...body.understudies].map((e) => e.id);
   assert.ok(all.every((id) => id.startsWith('movie~') || id.startsWith('tv~')));
