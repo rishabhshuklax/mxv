@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+const BASE = import.meta.env?.VITE_BACKEND_URL || 'http://localhost:3001';
 
 async function get(path) {
   const res = await fetch(`${BASE}${path}`);
@@ -15,7 +15,8 @@ export const api = {
   byGenre: (id, page = 1) => get(`/api/genres/${id}?page=${page}`),
   search: (q) => get(`/api/entity/search?query=${encodeURIComponent(q)}`),
   extras: (type, id) => get(`/api/entity/${type}/${id}/extras`),
-  tonight: (qs) => get(`/api/tonight?${qs}`)
+  tonight: (qs) => get(`/api/tonight?${qs}`),
+  person: (id) => get(`/api/person/${id}`)
 };
 
 export const img = (path, size = 'w342') =>

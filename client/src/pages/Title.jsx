@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api, img, splitId, titleOf, yearOf } from '../api';
-import { useWatchlist, useTitle } from '../store';
+import { useWatchlist, useTitle, recordView } from '../store';
 import Rating from '../components/Rating';
 import Row from '../components/Row';
 
@@ -69,7 +69,11 @@ export default function Title() {
     let on = true;
     api
       .extras(type, id)
-      .then((data) => on && setD(data))
+      .then((data) => {
+        if (!on) return;
+        setD(data);
+        recordView(data);
+      })
       .catch((e) => on && setErr(e.message));
     return () => {
       on = false;
@@ -106,6 +110,9 @@ export default function Title() {
   const saved = has(d.id);
   const people = d.type === 'tv' ? d.creators : d.directors;
   const peopleLabel = d.type === 'tv' ? 'Created by' : 'Directed by';
+  // when a streaming provider carries the title, playing it is the primary
+  // action — the link goes to the provider via the TMDB/JustWatch page
+  const stream = d.providers?.flatrate?.[0];
 
   return (
     <>
@@ -147,6 +154,16 @@ export default function Title() {
               <Link className="btn btn-primary" to={`/watch/${type}~${id}`}>
                 ▶ Watch now
               </Link>
+              {stream && (
+                <a
+                  className="btn btn-ghost"
+                  href={d.providers.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  ▶ Watch on {stream.provider_name}
+                </a>
+              )}
               {d.trailer && (
                 <button className="btn btn-ghost" onClick={() => setShowTrailer(true)}>
                   ▶ Watch trailer
@@ -169,7 +186,7 @@ export default function Title() {
             <h2 className="row-title">Cast</h2>
             <div className="row-scroller">
               {d.cast.map((c) => (
-                <div key={c.credit_id || c.id} className="person">
+                <Link key={c.credit_id || c.id} to={`/person/${c.id}`} className="person">
                   {c.profile_path ? (
                     <img src={img(c.profile_path, 'w185')} alt={c.name} loading="lazy" />
                   ) : (
@@ -177,8 +194,24 @@ export default function Title() {
                   )}
                   <strong>{c.name}</strong>
                   <span>{c.character}</span>
-                </div>
+                </Link>
               ))}
+            </div>
+          </section>
+        )}
+
+        {d.belongs_to_collection && (
+          <section className="row fade-up collection-banner">
+            {d.belongs_to_collection.backdrop_path && (
+              <img
+                className="collection-bg"
+                src={img(d.belongs_to_collection.backdrop_path, 'w1280')}
+                alt=""
+              />
+            )}
+            <div className="collection-content">
+              <span className="cst-focus-label">Part of a saga</span>
+              <h2 className="display">{d.belongs_to_collection.name}</h2>
             </div>
           </section>
         )}

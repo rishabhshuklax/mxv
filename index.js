@@ -20,6 +20,15 @@ app.get('/', (req, res) => {
   res.json({ name: 'mxv-api', status: 'ok' });
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    time: new Date().toISOString(),
+    tmdbConfigured: Boolean(process.env.TMDB_API_KEY),
+    mongoConfigured: Boolean(process.env.MONGODB_URI)
+  });
+});
+
 // get all movies
 app.get('/api/movie/recommend', (req, res) => {
     MovieController.recommend(req, res);
@@ -76,6 +85,11 @@ app.get('/api/entity/:type/:id/extras', (req, res) => {
 // the projection booth: dial settings in, one verdict out
 app.get('/api/tonight', (req, res) => {
   MovieController.tonight(req, res);
+});
+
+// person bio + filmography
+app.get('/api/person/:id', (req, res) => {
+  MovieController.getPerson(req, res);
 });
 
 // User routes

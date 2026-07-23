@@ -1,11 +1,13 @@
 const _ = require('lodash');
 const axios = require('axios');
 const async = require('async');
+const cache = require('../lib/cache');
+const { mulberry32 } = require('../lib/rng');
 
 // Express Controller for Movie related things
 module.exports = {
     recommend: async (req, res) => {
-        console.log("Inside recommended")
+        cache.edge(res, 180);
         let latestMovieReqConfig = {
             method: 'get',
             maxBodyLength: Infinity,
@@ -70,7 +72,7 @@ module.exports = {
         });
     },
     getMovie: async (req, res) => {
-        console.log('inside getMovie');
+        cache.edge(res, 3600);
         let config = {
             method: 'get',
             maxBodyLength: Infinity,
@@ -98,7 +100,11 @@ module.exports = {
         const url = `${process.env.TMDB_API_BASE_URL}/3/${type}/${id}?language=en-US&api_key=${process.env.TMDB_API_KEY}&append_to_response=videos,credits,watch%2Fproviders,recommendations`;
 
         try {
-            const { data } = await axios.get(url);
+            cache.edge(res, 1800);
+            const data = await cache.wrap(`extras:${type}:${id}`, 30 * 60 * 1000, async () => {
+                const r = await axios.get(url);
+                return r.data;
+            });
 
             const videos = data.videos?.results || [];
             const trailer = videos
@@ -139,19 +145,74 @@ module.exports = {
         }
     },
 
-    // The projection booth: four dials in, one confident verdict out.
-    // Progressive relaxation keeps narrow dial combinations from coming up empty,
-    // and a seeded shuffle makes "deal another" deterministic per seed.
+    // bio + filmography, deduped and sorted so leads surface before bit parts
+    getPerson: async (req, res) => {
+        const { id } = req.params;
+        const url = `${process.env.TMDB_API_BASE_URL}/3/person/${id}?language=en-US&api_key=${process.env.TMDB_API_KEY}&append_to_response=combined_credits`;
+
+        try {
+            cache.edge(res, 1800);
+            const data = await cache.wrap(`person:${id}`, 30 * 60 * 1000, async () => {
+                const r = await axios.get(url);
+                return r.data;
+            });
+
+            const credits = [
+                ...(data.combined_credits?.cast || []),
+                ...(data.combined_credits?.crew || [])
+            ];
+            const byTitle = new Map();
+            credits.forEach((c) => {
+                if (!c.poster_path) return;
+                const type = c.media_type === 'tv' ? 'tv' : 'movie';
+                const key = `${type}~${c.id}`;
+                const role = c.character || c.job;
+                const existing = byTitle.get(key);
+                if (existing) {
+                    if (role && !existing._roles.includes(role)) existing._roles.push(role);
+                    return;
+                }
+                byTitle.set(key, { ...c, id: key, _roles: role ? [role] : [] });
+            });
+            const filmography = _.orderBy(
+                Array.from(byTitle.values()).map((c) => ({
+                    ...c,
+                    role: c._roles.slice(0, 2).join(' / ')
+                })),
+                [(c) => c.release_date || c.first_air_date || ''],
+                ['desc']
+            );
+
+            const { combined_credits: _cc, ...person } = data;
+            res.json({ ...person, filmography });
+        } catch (error) {
+            console.log(error.message);
+            res.status(error.response?.status || 500).json({ error: error.message });
+        }
+    },
+
+    // The projection booth: five dials in, one confident verdict out.
+    // Pools are drawn deep (popularity-sorted with a rating floor, several pages,
+    // film and/or TV), the relax ladder accumulates instead of replacing, picks
+    // are weighted by quality so the feature is never a coin-flip with junk, and
+    // an exclude list guarantees "deal another" deals titles you haven't seen.
     tonight: async (req, res) => {
+        const FORMATS = {
+            film: { word: 'a film' },
+            series: { word: 'a series' },
+            either: { word: 'film or series' }
+        };
+        // genre lists are pipe-joined: TMDB treats "a,b" as AND (must have every
+        // genre) but "a|b" as OR — commas here silently starve multi-genre pools
         const MOODS = {
-            electric: { genres: '28,53', word: 'something electric' },
-            funny: { genres: '35', word: 'something funny' },
-            tender: { genres: '10749,18', word: 'something tender' },
-            dark: { genres: '27,80,53', word: 'something dark' },
-            strange: { genres: '878,14,9648', word: 'something strange' },
-            epic: { genres: '12,14,36,10752', word: 'something epic' },
-            true: { genres: '99,36', word: 'something true' },
-            childlike: { genres: '16,10751', word: 'something childlike' }
+            electric: { genres: '28|53', tv: '10759', word: 'something electric' },
+            funny: { genres: '35', tv: '35', word: 'something funny' },
+            tender: { genres: '10749|18', tv: '18', word: 'something tender' },
+            dark: { genres: '27|80|53', tv: '80|9648', word: 'something dark' },
+            strange: { genres: '878|14|9648', tv: '10765|9648', word: 'something strange' },
+            epic: { genres: '12|14|36|10752', tv: '10759|10765|10768', word: 'something epic' },
+            true: { genres: '99|36', tv: '99', word: 'something true' },
+            childlike: { genres: '16|10751', tv: '16|10762|10751', word: 'something childlike' }
         };
         const ERAS = {
             any: { word: 'from any era' },
@@ -166,51 +227,84 @@ module.exports = {
             grand: { gte: 140, word: 'built for a long sitting' }
         };
         const PATHS = {
-            crowd: { gte: 3000, sort: 'popularity.desc', word: 'loved by the crowd' },
-            balanced: { gte: 400, sort: 'vote_average.desc', word: 'well travelled' },
-            hidden: { gte: 50, lte: 900, sort: 'vote_average.desc', word: 'far off the beaten path' }
+            crowd: { gte: 3000, tvGte: 1000, floor: 6.0, word: 'loved by the crowd' },
+            balanced: { gte: 400, tvGte: 150, floor: 6.8, word: 'well travelled' },
+            hidden: { gte: 50, lte: 900, tvGte: 25, tvLte: 300, floor: 6.8, word: 'far off the beaten path' }
         };
 
-        const mood = MOODS[req.query.mood] || MOODS.strange;
-        const era = ERAS[req.query.era] || ERAS.any;
-        const length = LENGTHS[req.query.length] || LENGTHS.standard;
-        const path = PATHS[req.query.path] || PATHS.balanced;
+        const formatKey = FORMATS[req.query.format] ? req.query.format : 'film';
+        const moodKey = MOODS[req.query.mood] ? req.query.mood : 'strange';
+        const eraKey = ERAS[req.query.era] ? req.query.era : 'any';
+        const lengthKey = LENGTHS[req.query.length] ? req.query.length : 'standard';
+        const pathKey = PATHS[req.query.path] ? req.query.path : 'balanced';
+        const format = FORMATS[formatKey];
+        const mood = MOODS[moodKey];
+        const era = ERAS[eraKey];
+        const length = LENGTHS[lengthKey];
+        const path = PATHS[pathKey];
         const seed = parseInt(req.query.seed, 10) || Date.now();
+        const exclude = new Set(String(req.query.exclude || '').split(',').filter(Boolean));
+        cache.edge(res, 600);
 
-        const attempt = async (relax) => {
+        const discover = (media, relax) => {
             const params = new URLSearchParams({
                 include_adult: 'false',
                 language: 'en-US',
-                sort_by: path.sort,
+                sort_by: 'popularity.desc',
                 api_key: process.env.TMDB_API_KEY,
-                with_genres: mood.genres,
-                'vote_count.gte': String(path.gte)
+                with_genres: media === 'tv' ? mood.tv : mood.genres,
+                'vote_count.gte': String(media === 'tv' ? path.tvGte : path.gte),
+                'vote_average.gte': String(relax < 3 ? path.floor : 5.8)
             });
-            if (relax < 3 && path.lte) params.set('vote_count.lte', String(path.lte));
+            const lte = media === 'tv' ? path.tvLte : path.lte;
+            if (relax < 3 && lte) params.set('vote_count.lte', String(lte));
             if (relax < 2) {
-                if (era.gte) params.set('primary_release_date.gte', era.gte);
-                if (era.lte) params.set('primary_release_date.lte', era.lte);
+                const gteField = media === 'tv' ? 'first_air_date.gte' : 'primary_release_date.gte';
+                const lteField = media === 'tv' ? 'first_air_date.lte' : 'primary_release_date.lte';
+                if (era.gte) params.set(gteField, era.gte);
+                if (era.lte) params.set(lteField, era.lte);
             }
-            if (relax < 1) {
+            // runtime only constrains films — TV episode runtimes would empty the pool
+            if (relax < 1 && media === 'movie') {
                 if (length.gte) params.set('with_runtime.gte', String(length.gte));
                 if (length.lte) params.set('with_runtime.lte', String(length.lte));
             }
-            const base = `${process.env.TMDB_API_BASE_URL}/3/discover/movie?${params.toString()}`;
-            const pages = await Promise.all(
-                [1, 2].map((pg) =>
+            const base = `${process.env.TMDB_API_BASE_URL}/3/discover/${media}?${params.toString()}`;
+            return Promise.all(
+                [1, 2, 3].map((pg) =>
                     axios.get(`${base}&page=${pg}`).then((r) => r.data.results || []).catch(() => [])
                 )
+            ).then((pages) =>
+                pages
+                    .flat()
+                    .filter((m) => m.poster_path && m.backdrop_path && m.overview && !m.softcore)
+                    .map((m) => ({ ...m, _type: media }))
             );
-            return pages.flat().filter((m) => m.poster_path && m.backdrop_path && m.overview);
+        };
+
+        const attempt = async (relax) => {
+            const cacheKey = `tonight:${formatKey}:${moodKey}:${eraKey}:${lengthKey}:${pathKey}:${relax}`;
+            return cache.wrap(cacheKey, 10 * 60 * 1000, async () => {
+                const media = formatKey === 'either' ? ['movie', 'tv'] : [formatKey === 'series' ? 'tv' : 'movie'];
+                const batches = await Promise.all(media.map((m) => discover(m, relax)));
+                return batches.flat();
+            });
         };
 
         try {
-            let pool = [];
-            for (let relax = 0; relax <= 3 && pool.length < 6; relax++) {
-                pool = await attempt(relax);
-            }
+            // accumulate across relax levels so strict matches stay in the pool
+            const pool = [];
             const seen = new Set();
-            pool = pool.filter((m) => !seen.has(m.id) && seen.add(m.id));
+            for (let relax = 0; relax <= 3 && pool.length < 24; relax++) {
+                const batch = await attempt(relax);
+                batch.forEach((m) => {
+                    const key = `${m._type}~${m.id}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        pool.push(m);
+                    }
+                });
+            }
 
             const scored = _.orderBy(
                 pool.map((m) => ({
@@ -219,32 +313,49 @@ module.exports = {
                 })),
                 ['_score'],
                 ['desc']
-            ).slice(0, 15);
+            ).slice(0, 48);
 
-            // mulberry32-style seeded picks so the same seed always deals the same hand
-            let s = seed >>> 0;
-            const rand = () => {
-                s = (s + 0x6d2b79f5) | 0;
-                let t = Math.imul(s ^ (s >>> 15), 1 | s);
-                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-            };
-            const bag = [...scored];
+            // never re-deal what this session has already seen; if the vault is
+            // exhausted, fall back to the full deck rather than erroring
+            let bag = scored.filter((m) => !exclude.has(`${m._type}~${m.id}`));
+            if (bag.length < 3) bag = [...scored];
+
+            // seeded, quality-weighted sampling without replacement: the same seed
+            // always deals the same hand, but an 8.4 outdraws a 6.0 by an order of
+            // magnitude instead of being a uniform coin-flip
+            const rand = mulberry32(seed);
+            const weightOf = (m) => Math.pow(Math.max(m._score, 0.1), 3);
             const picks = [];
             while (bag.length && picks.length < 3) {
-                picks.push(bag.splice(Math.floor(rand() * bag.length), 1)[0]);
+                let total = 0;
+                for (const m of bag) total += weightOf(m);
+                let r = rand() * total;
+                let idx = 0;
+                for (; idx < bag.length - 1; idx++) {
+                    r -= weightOf(bag[idx]);
+                    if (r <= 0) break;
+                }
+                picks.push(bag.splice(idx, 1)[0]);
             }
 
             if (!picks.length) {
-                return res.status(404).json({ error: 'No film matched the brief — loosen a dial.' });
+                return res.status(404).json({ error: 'Nothing matched the brief — loosen a dial.' });
             }
 
-            const shape = (m) => ({ ..._.omit(m, '_score'), id: `movie~${m.id}` });
+            const shape = (m) => ({ ..._.omit(m, ['_score', '_type']), id: `${m._type}~${m.id}` });
+            const reasonParts = [
+                format.word,
+                mood.word,
+                era.word,
+                formatKey === 'series' ? null : length.word,
+                path.word
+            ].filter(Boolean);
             res.json({
                 feature: shape(picks[0]),
                 understudies: picks.slice(1).map(shape),
-                reason: `${mood.word}, ${era.word}, ${length.word}, ${path.word}`,
-                poolSize: pool.length,
+                reason: reasonParts.join(', '),
+                poolSize: scored.length,
+                format: formatKey,
                 seed
             });
         } catch (error) {
@@ -254,9 +365,10 @@ module.exports = {
     },
 
     search: async (req, res) => {
+        cache.edge(res, 300);
         let config = {
             method: 'get',
-            url: `${process.env.TMDB_API_BASE_URL}/3/search/movie?page=${req.query.page || 1}&query=${req.query.query}&api_key=${process.env.TMDB_API_KEY}`,
+            url: `${process.env.TMDB_API_BASE_URL}/3/search/movie?page=${req.query.page || 1}&query=${encodeURIComponent(req.query.query || '')}&api_key=${process.env.TMDB_API_KEY}`,
             headers: { }
         };
 
@@ -281,7 +393,7 @@ module.exports = {
             searchTv: (callback) => {
                 let config = {
                     method: 'get',
-                    url: `${process.env.TMDB_API_BASE_URL}/3/search/tv?page=${req.query.page || 1}&query=${req.query.query}&api_key=${process.env.TMDB_API_KEY}`,
+                    url: `${process.env.TMDB_API_BASE_URL}/3/search/tv?page=${req.query.page || 1}&query=${encodeURIComponent(req.query.query || '')}&api_key=${process.env.TMDB_API_KEY}`,
                     headers: { }
                 };
                 axios.request(config)
@@ -317,6 +429,7 @@ module.exports = {
     },
 
     getTv: async (req, res) => {
+        cache.edge(res, 3600);
         let config = {
             method: 'get',
             maxBodyLength: Infinity,
@@ -335,6 +448,7 @@ module.exports = {
         });
     },
     getTrending: async (req, res) => {
+        cache.edge(res, 300);
         let config = {
             method: 'get',
             maxBodyLength: Infinity,
@@ -360,6 +474,7 @@ module.exports = {
         });
     },
     getAiringToday: async (req, res) => {
+        cache.edge(res, 300);
         let config = {
             method: 'get',
             maxBodyLength: Infinity,
@@ -385,6 +500,7 @@ module.exports = {
         });
     },
     discoverMovies: async (req, res) => {
+        cache.edge(res, 600);
         let config = {
             method: 'get',
             maxBodyLength: Infinity,

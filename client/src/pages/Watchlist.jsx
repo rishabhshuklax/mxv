@@ -22,7 +22,10 @@ export default function Watchlist() {
     <div className="page-pad">
       <h1 className="page-title display">Your watchlist</h1>
       <p className="page-sub">
-        {items.length} title{items.length === 1 ? '' : 's'}, saved on this device.
+        {items.length} title{items.length === 1 ? '' : 's'}, saved on this device. —{' '}
+        <Link to="/taste" className="taste-link">
+          see your taste profile →
+        </Link>
       </p>
       <div className="grid fade-up">
         {items.map((e) => (

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, img, splitId, titleOf, yearOf } from '../api';
 import { useTitle } from '../store';
 
@@ -292,7 +292,16 @@ export default function Constellation() {
         onMouseMove={onMove}
         onMouseLeave={onLeave}
         onClick={onClick}
+        role="img"
+        aria-label={
+          center
+            ? `A star map centered on ${titleOf(center)}, orbited by similar titles.`
+            : 'A star map of connected films.'
+        }
       />
+      <Link to="/browse" className="cst-skip">
+        Skip the map — browse titles instead
+      </Link>
 
       <div className="cst-intro">
         <p className="kicker">The Constellation</p>

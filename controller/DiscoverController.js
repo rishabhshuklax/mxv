@@ -1,31 +1,29 @@
 const _ = require('lodash');
 const axios = require('axios');
 const async = require('async');
+const cache = require('../lib/cache');
 
 module.exports = {
     getGenres: async (req, res) => {
-        console.log('inside getGenres');
-        let config = {
-            method: 'get',
-            maxBodyLength: Infinity,
-            url: `${process.env.TMDB_API_BASE_URL}/3/genre/movie/list?language=en-US&api_key=${process.env.TMDB_API_KEY}`,
-            headers: {}
-        };
-        axios.request(config)
-            .then((response) => {
-                console.log('Genres fetched:', response.data.genres);
-                res.json(response.data.genres); // Send genres as a JSON response
-            })
-            .catch((error) => {
-                console.error('Error fetching genres:', error.message);
-                res.status(500).json({ error: 'Failed to fetch genres' });
+        try {
+            const genres = await cache.wrap('genres:movie', 24 * 60 * 60 * 1000, async () => {
+                const { data } = await axios.get(
+                    `${process.env.TMDB_API_BASE_URL}/3/genre/movie/list?language=en-US&api_key=${process.env.TMDB_API_KEY}`
+                );
+                return data.genres;
             });
+            cache.edge(res, 3600);
+            res.json(genres);
+        } catch (error) {
+            console.error('Error fetching genres:', error.message);
+            res.status(500).json({ error: 'Failed to fetch genres' });
+        }
     },
 
     discoverMovies: async (req, res) => {
         const genreId = req.params.id; // Extract the genre ID from the URL
         const page = req.query.page || 1; // Default to page 1 if no page is specified
-        console.log(`Fetching movies for genre ID: ${genreId}, Page: ${page}`);
+        cache.edge(res, 300);
 
         let discoverMoviesConfig = {
                 method: 'get',
