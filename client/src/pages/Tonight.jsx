@@ -127,6 +127,7 @@ export default function Tonight() {
 
   const feature = result?.feature;
   const remaining = result ? Math.max(result.poolSize - dealtRef.current.size, 0) : 0;
+  const stream = extras?.providers?.flatrate?.[0];
 
   const lengthChip = () => {
     if (extras?.runtime) {
@@ -216,8 +217,21 @@ export default function Tonight() {
             </div>
             <p className="overview">{feature.overview}</p>
             <div className="hero-actions">
+              {stream && (
+                <a
+                  className="btn btn-primary"
+                  href={extras.providers.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  ▶ Watch on {stream.provider_name}
+                </a>
+              )}
               {extras?.trailer && (
-                <button className="btn btn-primary" onClick={() => setShowTrailer(true)}>
+                <button
+                  className={`btn ${stream ? 'btn-ghost' : 'btn-primary'}`}
+                  onClick={() => setShowTrailer(true)}
+                >
                   ▶ Watch trailer
                 </button>
               )}

@@ -110,6 +110,9 @@ export default function Title() {
   const saved = has(d.id);
   const people = d.type === 'tv' ? d.creators : d.directors;
   const peopleLabel = d.type === 'tv' ? 'Created by' : 'Directed by';
+  // when a streaming provider carries the title, playing it is the primary
+  // action — the link goes to the provider via the TMDB/JustWatch page
+  const stream = d.providers?.flatrate?.[0];
 
   return (
     <>
@@ -148,8 +151,21 @@ export default function Title() {
               </p>
             )}
             <div className="hero-actions">
+              {stream && (
+                <a
+                  className="btn btn-primary"
+                  href={d.providers.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  ▶ Watch on {stream.provider_name}
+                </a>
+              )}
               {d.trailer && (
-                <button className="btn btn-primary" onClick={() => setShowTrailer(true)}>
+                <button
+                  className={`btn ${stream ? 'btn-ghost' : 'btn-primary'}`}
+                  onClick={() => setShowTrailer(true)}
+                >
                   ▶ Watch trailer
                 </button>
               )}
