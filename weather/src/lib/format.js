@@ -71,6 +71,46 @@ export function formatClockTime(isoString) {
   return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }).format(date);
 }
 
+// Temperature *differences* scale by 9/5 only — no +32 offset.
+export function formatTempDelta(deltaCelsius, unit = 'C') {
+  if (deltaCelsius === null || deltaCelsius === undefined || Number.isNaN(deltaCelsius)) return '--°';
+  const value = unit === 'F' ? (deltaCelsius * 9) / 5 : deltaCelsius;
+  return `${Math.round(Math.abs(value))}°`;
+}
+
+export function formatPressure(hpa, unit = 'C') {
+  if (hpa === null || hpa === undefined || Number.isNaN(hpa)) return '--';
+  if (unit === 'F') return `${(hpa * 0.02953).toFixed(2)} inHg`;
+  return `${Math.round(hpa)} hPa`;
+}
+
+export function formatVisibility(meters, unit = 'C') {
+  if (meters === null || meters === undefined || Number.isNaN(meters)) return '--';
+  if (unit === 'F') {
+    const miles = meters / 1609.34;
+    if (miles >= 10) return '10+ mi';
+    return `${miles < 2 ? miles.toFixed(1) : Math.round(miles)} mi`;
+  }
+  const km = meters / 1000;
+  if (km >= 10) return '10+ km';
+  if (km >= 1) return `${km < 2 ? km.toFixed(1) : Math.round(km)} km`;
+  return `${Math.round(meters / 100) * 100} m`;
+}
+
+export function formatDaylight(minutes) {
+  if (minutes === null || minutes === undefined || Number.isNaN(minutes)) return '--';
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  return `${h}h ${String(m).padStart(2, '0')}m`;
+}
+
+export function pressureTrendInfo(trend) {
+  if (trend === 'rising') return { label: 'Rising', arrow: '↑' };
+  if (trend === 'falling') return { label: 'Falling', arrow: '↓' };
+  if (trend === 'steady') return { label: 'Steady', arrow: '→' };
+  return { label: '', arrow: '' };
+}
+
 export function aqiLevel(aqi) {
   if (aqi === null || aqi === undefined || Number.isNaN(aqi)) return { label: 'Unknown', tone: 'unknown' };
   if (aqi <= 50) return { label: 'Good', tone: 'good' };

@@ -44,3 +44,15 @@ export function backgroundTheme(code, isDay = true) {
   if (!isDay) return 'night';
   return group;
 }
+
+// Relative particle density for the animated sky, 0 for non-precipitation codes.
+const HEAVY = new Set([55, 65, 67, 75, 82, 86, 99]);
+const MODERATE = new Set([53, 63, 73, 81, 95, 96]);
+const LIGHT = new Set([51, 56, 57, 61, 66, 71, 77, 80, 85]);
+
+export function precipIntensity(code) {
+  if (HEAVY.has(code)) return 1;
+  if (MODERATE.has(code)) return 0.7;
+  if (LIGHT.has(code)) return 0.45;
+  return 0;
+}

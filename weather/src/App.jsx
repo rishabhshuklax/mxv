@@ -1,16 +1,22 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import SearchBar from './components/SearchBar.jsx';
 import SavedLocations from './components/SavedLocations.jsx';
 import CurrentWeather from './components/CurrentWeather.jsx';
-import HourlyStrip from './components/HourlyStrip.jsx';
+import InsightsRow from './components/InsightsRow.jsx';
+import NowcastCard from './components/NowcastCard.jsx';
+import HourlyPanel from './components/HourlyPanel.jsx';
 import DailyForecast from './components/DailyForecast.jsx';
-import DetailsGrid from './components/DetailsGrid.jsx';
+import ConditionsPanel from './components/ConditionsPanel.jsx';
+import SunMoonPanel from './components/SunMoonPanel.jsx';
 import AirQualityCard from './components/AirQualityCard.jsx';
 import UnitToggle from './components/UnitToggle.jsx';
+import SkyCanvas from './components/SkyCanvas.jsx';
 import { LoadingScreen, ErrorScreen, EmptyScreen } from './components/StateScreens.jsx';
 import { fetchForecast, fetchAirQuality, reverseGeocode } from './lib/api.js';
 import { normalizeForecast, normalizeAirQuality } from './lib/normalize.js';
 import { backgroundTheme } from './lib/weatherCode.js';
+import { buildInsights } from './lib/insights.js';
+import { formatTemp } from './lib/format.js';
 import {
   loadSavedLocations,
   addSavedLocation,
@@ -31,6 +37,7 @@ export default function App() {
   const [unit, setUnit] = useState('C');
   const [saved, setSaved] = useState([]);
   const [locating, setLocating] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [theme, setTheme] = useState('clear');
 
   useEffect(() => {
@@ -38,9 +45,12 @@ export default function App() {
     setSaved(loadSavedLocations());
   }, []);
 
-  const loadWeatherFor = useCallback(async (targetLocation) => {
-    setStatus('loading');
-    setErrorMessage('');
+  const loadWeatherFor = useCallback(async (targetLocation, { background = false } = {}) => {
+    if (background) setRefreshing(true);
+    else {
+      setStatus('loading');
+      setErrorMessage('');
+    }
     try {
       const [rawForecast, rawAirQuality] = await Promise.all([
         fetchForecast(targetLocation.latitude, targetLocation.longitude),
@@ -53,9 +63,13 @@ export default function App() {
       setTheme(backgroundTheme(normalized.current.weatherCode, normalized.current.isDay));
       setStatus('ready');
       saveLastLocation(targetLocation);
-    } catch (err) {
-      setStatus('error');
-      setErrorMessage('Could not load the forecast. Check your connection and try again.');
+    } catch {
+      if (!background) {
+        setStatus('error');
+        setErrorMessage('Could not load the forecast. Check your connection and try again.');
+      }
+    } finally {
+      if (background) setRefreshing(false);
     }
   }, []);
 
@@ -104,6 +118,19 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (status === 'ready' && forecast && location) {
+      document.title = `${formatTemp(forecast.current.temperature, unit)} ${location.name} · Ultimate Weather`;
+    } else {
+      document.title = 'Ultimate Weather';
+    }
+  }, [status, forecast, location, unit]);
+
+  const insights = useMemo(() => {
+    if (status !== 'ready' || !forecast) return [];
+    return buildInsights({ ...forecast, airQuality, unit });
+  }, [status, forecast, airQuality, unit]);
+
   function handleUnitChange(next) {
     setUnit(next);
     saveUnit(next);
@@ -123,9 +150,18 @@ export default function App() {
   }
 
   const isSaved = location ? saved.some((item) => item.id === location.id) : false;
+  const ready = status === 'ready' && forecast && location;
 
   return (
     <div className={`app theme-${status === 'ready' ? theme : 'clear'}`}>
+      {ready && (
+        <SkyCanvas
+          group={theme}
+          isDay={forecast.current.isDay}
+          weatherCode={forecast.current.weatherCode}
+          windSpeed={forecast.current.windSpeed}
+        />
+      )}
       <div className="app-glow" aria-hidden="true" />
       <header className="app-header">
         <div className="brand">
@@ -146,26 +182,42 @@ export default function App() {
         onRemove={handleRemoveSaved}
       />
 
-      <main className="app-main">
+      <main className="app-main" aria-busy={status === 'loading'}>
         {status === 'loading' && <LoadingScreen />}
         {status === 'error' && (
-          <ErrorScreen message={errorMessage} onRetry={location ? () => loadWeatherFor(location) : handleUseLocation} />
+          <ErrorScreen
+            message={errorMessage}
+            onRetry={location ? () => loadWeatherFor(location) : handleUseLocation}
+          />
         )}
         {status === 'empty' && <EmptyScreen />}
-        {status === 'ready' && forecast && location && (
+        {ready && (
           <>
-            <CurrentWeather
-              location={location}
-              forecast={forecast}
-              unit={unit}
-              isSaved={isSaved}
-              onToggleSave={handleToggleSave}
-            />
-            <HourlyStrip hourly={forecast.hourly} unit={unit} />
-            <div className="panel-grid">
+            <div className="reveal" style={{ '--i': 0 }}>
+              <CurrentWeather
+                location={location}
+                forecast={forecast}
+                unit={unit}
+                isSaved={isSaved}
+                onToggleSave={handleToggleSave}
+                onRefresh={() => loadWeatherFor(location, { background: true })}
+                refreshing={refreshing}
+              />
+            </div>
+            <div className="reveal" style={{ '--i': 1 }}>
+              <InsightsRow insights={insights} />
+            </div>
+            <div className="reveal" style={{ '--i': 2 }}>
+              <NowcastCard nowcast={forecast.nowcast} />
+            </div>
+            <div className="reveal" style={{ '--i': 3 }}>
+              <HourlyPanel hourly={forecast.hourly} unit={unit} />
+            </div>
+            <div className="panel-grid reveal" style={{ '--i': 4 }}>
               <DailyForecast daily={forecast.daily} unit={unit} />
               <div className="panel-stack">
-                <DetailsGrid forecast={forecast} unit={unit} />
+                <ConditionsPanel forecast={forecast} unit={unit} />
+                <SunMoonPanel today={forecast.today} currentTime={forecast.current.time} />
                 <AirQualityCard airQuality={airQuality} />
               </div>
             </div>
@@ -174,7 +226,7 @@ export default function App() {
       </main>
 
       <footer className="app-footer">
-        <span>Data from Open-Meteo</span>
+        <span>Data from Open-Meteo · Ultimate Weather</span>
       </footer>
     </div>
   );

@@ -49,9 +49,12 @@ const FORECAST_PARAMS = [
   'weather_code',
   'wind_speed_10m',
   'wind_direction_10m',
+  'wind_gusts_10m',
   'relative_humidity_2m',
   'is_day',
   'precipitation',
+  'cloud_cover',
+  'pressure_msl',
 ].join(',');
 
 const HOURLY_PARAMS = [
@@ -59,23 +62,32 @@ const HOURLY_PARAMS = [
   'weather_code',
   'precipitation_probability',
   'is_day',
+  'wind_speed_10m',
+  'relative_humidity_2m',
+  'visibility',
+  'dew_point_2m',
+  'pressure_msl',
 ].join(',');
 
 const DAILY_PARAMS = [
   'weather_code',
   'temperature_2m_max',
   'temperature_2m_min',
+  'apparent_temperature_max',
+  'apparent_temperature_min',
   'sunrise',
   'sunset',
   'precipitation_probability_max',
+  'precipitation_sum',
   'uv_index_max',
+  'wind_speed_10m_max',
 ].join(',');
 
 export async function fetchForecast(latitude, longitude) {
   const url =
     `${FORECAST_URL}?latitude=${latitude}&longitude=${longitude}` +
     `&current=${FORECAST_PARAMS}&hourly=${HOURLY_PARAMS}&daily=${DAILY_PARAMS}` +
-    `&timezone=auto&forecast_days=8`;
+    `&minutely_15=precipitation&timezone=auto&forecast_days=8&past_days=1`;
   return getJson(url);
 }
 

@@ -14,7 +14,7 @@ export default function AirQualityCard({ airQuality }) {
           <span className="aqi-label">{level.label}</span>
         </div>
         <div className="aqi-track">
-          <div className="aqi-fill" style={{ width: `${pct}%` }} />
+          <div className="aqi-marker" style={{ left: `${pct}%` }} />
         </div>
         <div className="aqi-pollutants">
           <span>PM2.5 {airQuality.pm2_5?.toFixed(1) ?? '--'}</span>

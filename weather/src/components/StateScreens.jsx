@@ -1,10 +1,7 @@
+import SkeletonView from './Skeletons.jsx';
+
 export function LoadingScreen() {
-  return (
-    <div className="state-screen">
-      <span className="spinner spinner--lg" aria-hidden="true" />
-      <p>Fetching the forecast…</p>
-    </div>
-  );
+  return <SkeletonView />;
 }
 
 export function ErrorScreen({ message, onRetry }) {

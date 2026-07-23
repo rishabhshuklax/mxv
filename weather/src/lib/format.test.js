@@ -10,6 +10,11 @@ import {
   formatHour,
   formatClockTime,
   formatFullDate,
+  formatTempDelta,
+  formatPressure,
+  formatVisibility,
+  formatDaylight,
+  pressureTrendInfo,
 } from './format.js';
 
 test('formatTemp rounds and defaults to celsius', () => {
@@ -76,4 +81,32 @@ test('formatHour shows the wall-clock hour untouched', () => {
 
 test('formatFullDate reads the date from the wall-clock string, not a shifted one', () => {
   assert.equal(formatFullDate('2026-07-24T23:30'), 'Friday, July 24');
+});
+
+test('formatTempDelta scales differences without the +32 offset', () => {
+  assert.equal(formatTempDelta(5, 'C'), '5°');
+  assert.equal(formatTempDelta(5, 'F'), '9°');
+  assert.equal(formatTempDelta(-5, 'F'), '9°');
+});
+
+test('formatPressure switches between hPa and inHg', () => {
+  assert.equal(formatPressure(1013.25, 'C'), '1013 hPa');
+  assert.equal(formatPressure(1013.25, 'F'), '29.92 inHg');
+});
+
+test('formatVisibility caps at 10 and handles sub-kilometer values', () => {
+  assert.equal(formatVisibility(24000, 'C'), '10+ km');
+  assert.equal(formatVisibility(6200, 'C'), '6 km');
+  assert.equal(formatVisibility(800, 'C'), '800 m');
+  assert.equal(formatVisibility(24000, 'F'), '10+ mi');
+});
+
+test('formatDaylight renders hours and minutes', () => {
+  assert.equal(formatDaylight(846), '14h 06m');
+});
+
+test('pressureTrendInfo maps trends to labels', () => {
+  assert.equal(pressureTrendInfo('rising').arrow, '↑');
+  assert.equal(pressureTrendInfo('falling').label, 'Falling');
+  assert.equal(pressureTrendInfo(null).label, '');
 });
