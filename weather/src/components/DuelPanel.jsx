@@ -23,6 +23,7 @@ export default function DuelPanel({ location, forecast, unit }) {
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
   const boxRef = useRef(null);
+  const pickSeq = useRef(0);
 
   useEffect(() => {
     if (query.trim().length < 2) {
@@ -68,14 +69,16 @@ export default function DuelPanel({ location, forecast, unit }) {
       return;
     }
     setBusy(true);
+    const seq = ++pickSeq.current;
     try {
       const raw = await fetchForecast(city.latitude, city.longitude);
+      if (seq !== pickSeq.current) return; // a newer pick superseded this one
       setRival(city);
       setRivalForecast(normalizeForecast(raw));
     } catch {
-      setError('Could not fetch that city right now.');
+      if (seq === pickSeq.current) setError('Could not fetch that city right now.');
     } finally {
-      setBusy(false);
+      if (seq === pickSeq.current) setBusy(false);
     }
   }
 
@@ -108,6 +111,13 @@ export default function DuelPanel({ location, forecast, unit }) {
               placeholder="Search a rival city…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setResults([]);
+                if (e.key === 'Enter' && results[0]) {
+                  e.preventDefault();
+                  pickRival(results[0]);
+                }
+              }}
               aria-label="Search a rival city"
             />
             {busy && <span className="spinner duel-spinner" aria-hidden="true" />}

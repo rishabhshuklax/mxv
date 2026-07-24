@@ -278,38 +278,54 @@ function download(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-// Share the canvas as a PNG. Returns 'shared' | 'cancelled' | 'downloaded'.
+// One share at a time: a second tap while the sheet is open must not fall
+// through to a surprise download (share() rejects when one is in flight).
+let shareInFlight = false;
+
+// Share the canvas as a PNG. 'shared' | 'cancelled' | 'downloaded' | 'busy' | 'failed'.
 export async function shareCanvas(canvas, filename, text) {
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-  if (!blob) return 'downloaded';
-  const file = new File([blob], filename, { type: 'image/png' });
-  if (navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], text });
-      return 'shared';
-    } catch (err) {
-      if (err?.name === 'AbortError') return 'cancelled';
-      // NotAllowed/InvalidState/etc — fall through to download.
+  if (shareInFlight) return 'busy';
+  shareInFlight = true;
+  try {
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) return 'failed';
+    const file = new File([blob], filename, { type: 'image/png' });
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], text });
+        return 'shared';
+      } catch (err) {
+        if (err?.name === 'AbortError') return 'cancelled';
+        // NotAllowed/InvalidState/etc — fall through to download.
+      }
     }
+    download(blob, filename);
+    return 'downloaded';
+  } finally {
+    shareInFlight = false;
   }
-  download(blob, filename);
-  return 'downloaded';
 }
 
-// Text-only share with clipboard fallback. 'shared' | 'cancelled' | 'copied' | false.
+// Text-only share with clipboard fallback. 'shared' | 'cancelled' | 'copied' | 'busy' | false.
 export async function shareText(text, url) {
-  if (navigator.share) {
-    try {
-      await navigator.share({ text, url });
-      return 'shared';
-    } catch (err) {
-      if (err?.name === 'AbortError') return 'cancelled';
-    }
-  }
+  if (shareInFlight) return 'busy';
+  shareInFlight = true;
   try {
-    await navigator.clipboard.writeText(`${text} ${url ?? ''}`.trim());
-    return 'copied';
-  } catch {
-    return false;
+    if (navigator.share) {
+      try {
+        await navigator.share({ text, url });
+        return 'shared';
+      } catch (err) {
+        if (err?.name === 'AbortError') return 'cancelled';
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url ?? ''}`.trim());
+      return 'copied';
+    } catch {
+      return false;
+    }
+  } finally {
+    shareInFlight = false;
   }
 }

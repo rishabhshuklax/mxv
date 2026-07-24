@@ -85,12 +85,14 @@ export default function App() {
       setTheme(backgroundTheme(normalized.current.weatherCode, normalized.current.isDay));
       setStatus('ready');
       saveLastLocation(targetLocation);
-      // Deep-linkable cities: shares land on the same place.
+      // Deep-linkable cities: shares land on the same place. 2-decimal
+      // coordinates (~1 km) — precise enough for weather, coarse enough
+      // that a geolocated user's shared URL never pinpoints their home.
       try {
         const params = new URLSearchParams();
         params.set('name', targetLocation.name);
-        params.set('lat', targetLocation.latitude.toFixed(3));
-        params.set('lon', targetLocation.longitude.toFixed(3));
+        params.set('lat', targetLocation.latitude.toFixed(2));
+        params.set('lon', targetLocation.longitude.toFixed(2));
         if (targetLocation.country) params.set('country', targetLocation.country);
         window.history.replaceState(null, '', `?${params.toString()}`);
       } catch {

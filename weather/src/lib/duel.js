@@ -1,4 +1,4 @@
-import { formatTempDelta } from './format.js';
+import { formatTempDelta, formatWind } from './format.js';
 
 // City Duel: compare two normalized forecasts and produce one punchy verdict
 // plus a small stat table. Pure and unit-testable.
@@ -49,7 +49,7 @@ export function compareCities(a, b, unit = 'C') {
   } else if (Math.abs(windDelta) >= 12) {
     const windy = windDelta > 0 ? a : b;
     const calm = windDelta > 0 ? b : a;
-    verdict = `${windy.name} is ${Math.abs(Math.round(windDelta))} km/h windier than ${calm.name} today. Hold onto your hat.`;
+    verdict = `${windy.name} is ${formatWind(Math.abs(windDelta), unit)} windier than ${calm.name} today. Hold onto your hat.`;
   } else {
     verdict = `Dead heat — ${a.name} and ${b.name} are wearing the same weather today.`;
   }

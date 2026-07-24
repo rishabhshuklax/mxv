@@ -13,9 +13,11 @@ export default function TimeMachinePanel({ series, cityName, unit }) {
   if (!series) return null;
 
   const rainLabel = result
-    ? result.precip > 0.2
-      ? `${result.precip.toFixed(1)} mm of rain fell`
-      : 'a dry day'
+    ? result.precip == null
+      ? 'no rain data for that day'
+      : result.precip > 0.2
+        ? `${result.precip.toFixed(1)} mm of rain fell`
+        : 'a dry day'
     : '';
 
   async function handleShare() {

@@ -2038,7 +2038,7 @@ input {
 
 .duel-strong {
   font-weight: 700;
-  color: var(--accent);
+  color: var(--text);
 }
 
 .duel-actions {
@@ -2073,4 +2073,18 @@ input {
   font-size: 1rem;
   font-weight: 700;
   color: var(--accent);
+}
+
+/* Review fixes: keep in-panel dropdowns above the footer; 16px inputs so
+   iOS Safari never auto-zooms; tidy the climate header when it wraps. */
+.app-main {
+  z-index: 2;
+}
+
+.tm-input {
+  font-size: 1rem;
+}
+
+.climate-head {
+  row-gap: 0.2rem;
 }
