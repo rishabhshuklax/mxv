@@ -59,11 +59,13 @@ const FORECAST_PARAMS = [
 
 const HOURLY_PARAMS = [
   'temperature_2m',
+  'apparent_temperature',
   'weather_code',
   'precipitation_probability',
   'is_day',
   'wind_speed_10m',
   'relative_humidity_2m',
+  'cloud_cover',
   'visibility',
   'dew_point_2m',
   'pressure_msl',
@@ -88,6 +90,18 @@ export async function fetchForecast(latitude, longitude) {
     `${FORECAST_URL}?latitude=${latitude}&longitude=${longitude}` +
     `&current=${FORECAST_PARAMS}&hourly=${HOURLY_PARAMS}&daily=${DAILY_PARAMS}` +
     `&minutely_15=precipitation&timezone=auto&forecast_days=8&past_days=1`;
+  return getJson(url);
+}
+
+const ARCHIVE_URL = 'https://archive-api.open-meteo.com/v1/archive';
+
+// Daily record back to 1940 for this location. Roughly 31k days x 3 series;
+// gzips well and is cached on-device by the history module.
+export async function fetchHistoricalDaily(latitude, longitude, startDate, endDate) {
+  const url =
+    `${ARCHIVE_URL}?latitude=${latitude}&longitude=${longitude}` +
+    `&start_date=${startDate}&end_date=${endDate}` +
+    `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`;
   return getJson(url);
 }
 

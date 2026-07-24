@@ -1060,6 +1060,191 @@ input {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- Planner ---------- */
+.planner-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.planner-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.planner-card--none {
+  opacity: 0.6;
+}
+
+.planner-card--golden {
+  border-color: color-mix(in srgb, #ffd166 35%, transparent);
+}
+
+.planner-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.planner-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.planner-card--golden .planner-icon {
+  color: #ffd166;
+}
+
+.planner-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.planner-score {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.planner-score--great { background: rgba(98, 224, 161, 0.18); color: #7ee8b2; }
+.planner-score--good { background: rgba(255, 209, 102, 0.16); color: #ffd97a; }
+.planner-score--fair { background: rgba(255, 255, 255, 0.1); color: var(--text-dim); }
+
+.planner-window {
+  font-size: 0.98rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.planner-window--none {
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+.planner-reason {
+  font-size: 0.76rem;
+  color: var(--text-faint);
+}
+
+/* ---------- Climate memory ---------- */
+.climate-verdict {
+  margin: -0.2rem 0 0.9rem;
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.climate-loading {
+  margin: 0 0 0.8rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.skeleton-stripes {
+  height: 56px;
+  border-radius: 10px;
+}
+
+.stripes-wrap {
+  margin-bottom: 1rem;
+}
+
+.stripes {
+  width: 100%;
+  height: 56px;
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.stripes-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.stripes-caption {
+  text-align: center;
+  flex: 1;
+}
+
+.climate-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.climate-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.climate-year {
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.climate-history {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.climate-history-row {
+  display: flex;
+  gap: 0.55rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.climate-history-row::-webkit-scrollbar {
+  display: none;
+}
+
+.climate-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  flex-shrink: 0;
+  min-width: 108px;
+}
+
+.climate-chip-year {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+
+.climate-chip-temp {
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.climate-chip-precip {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
 /* ---------- Footer ---------- */
 .app-footer {
   margin-top: 2rem;
@@ -1241,6 +1426,12 @@ input {
   }
 }
 
+@media (min-width: 760px) {
+  .planner-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 420px) {
   .hero-temp {
     font-size: 4.4rem;
@@ -1252,5 +1443,9 @@ input {
 
   .wind-card-body {
     gap: 0.8rem;
+  }
+
+  .climate-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }

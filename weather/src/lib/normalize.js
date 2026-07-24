@@ -37,18 +37,22 @@ export function normalizeForecast(raw) {
   const hourlyAll = hourlyTimes.map((time, i) => ({
     time,
     temperature: raw.hourly.temperature_2m?.[i] ?? null,
+    feelsLike: raw.hourly.apparent_temperature?.[i] ?? null,
     weatherCode: raw.hourly.weather_code?.[i] ?? null,
     precipitationProbability: raw.hourly.precipitation_probability?.[i] ?? null,
     isDay: raw.hourly.is_day?.[i] === 1,
     windSpeed: raw.hourly.wind_speed_10m?.[i] ?? null,
     humidity: raw.hourly.relative_humidity_2m?.[i] ?? null,
+    cloudCover: raw.hourly.cloud_cover?.[i] ?? null,
     visibility: raw.hourly.visibility?.[i] ?? null,
     dewPoint: raw.hourly.dew_point_2m?.[i] ?? null,
     pressure: raw.hourly.pressure_msl?.[i] ?? null,
   }));
 
   const nowIdx = hourlyTimes.indexOf(hourFloor);
-  const hourly = hourlyAll.filter((hour) => hour.time >= hourFloor).slice(0, 24);
+  const upcoming = hourlyAll.filter((hour) => hour.time >= hourFloor);
+  const hourly = upcoming.slice(0, 24);
+  const hourly48 = upcoming.slice(0, 48);
   const nowHour = nowIdx >= 0 ? hourlyAll[nowIdx] : hourly[0] ?? null;
 
   let pressureTrend = null;
@@ -108,6 +112,7 @@ export function normalizeForecast(raw) {
       pressureTrend,
     },
     hourly,
+    hourly48,
     daily,
     today: daily[0] ?? null,
     yesterday,

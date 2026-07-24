@@ -11,12 +11,15 @@ import SunMoonPanel from './components/SunMoonPanel.jsx';
 import AirQualityCard from './components/AirQualityCard.jsx';
 import UnitToggle from './components/UnitToggle.jsx';
 import SkyCanvas from './components/SkyCanvas.jsx';
+import PlannerPanel from './components/PlannerPanel.jsx';
+import ClimatePanel from './components/ClimatePanel.jsx';
 import { LoadingScreen, ErrorScreen, EmptyScreen } from './components/StateScreens.jsx';
-import { fetchForecast, fetchAirQuality, reverseGeocode } from './lib/api.js';
+import { fetchForecast, fetchAirQuality, fetchHistoricalDaily, reverseGeocode } from './lib/api.js';
 import { normalizeForecast, normalizeAirQuality } from './lib/normalize.js';
 import { backgroundTheme } from './lib/weatherCode.js';
 import { buildInsights } from './lib/insights.js';
 import { formatTemp } from './lib/format.js';
+import { buildSeries, readHistoryCache, writeHistoryCache, HISTORY_START_YEAR } from './lib/history.js';
 import {
   loadSavedLocations,
   addSavedLocation,
@@ -39,6 +42,7 @@ export default function App() {
   const [locating, setLocating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [theme, setTheme] = useState('clear');
+  const [history, setHistory] = useState({ series: null, loading: false });
 
   useEffect(() => {
     setUnit(loadUnit());
@@ -117,6 +121,33 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Climate memory loads lazily after the forecast: instant when cached,
+  // one ~85-year archive request per location otherwise.
+  useEffect(() => {
+    if (status !== 'ready' || !location) return undefined;
+    const cached = readHistoryCache(location.latitude, location.longitude);
+    if (cached) {
+      setHistory({ series: cached, loading: false });
+      return undefined;
+    }
+    let cancelled = false;
+    setHistory({ series: null, loading: true });
+    const end = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+    fetchHistoricalDaily(location.latitude, location.longitude, `${HISTORY_START_YEAR}-01-01`, end)
+      .then((raw) => {
+        if (cancelled) return;
+        const series = buildSeries(raw);
+        if (series) writeHistoryCache(location.latitude, location.longitude, series);
+        setHistory({ series, loading: false });
+      })
+      .catch(() => {
+        if (!cancelled) setHistory({ series: null, loading: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [status, location]);
 
   useEffect(() => {
     if (status === 'ready' && forecast && location) {
@@ -213,13 +244,25 @@ export default function App() {
             <div className="reveal" style={{ '--i': 3 }}>
               <HourlyPanel hourly={forecast.hourly} unit={unit} />
             </div>
-            <div className="panel-grid reveal" style={{ '--i': 4 }}>
+            <div className="reveal" style={{ '--i': 4 }}>
+              <PlannerPanel hourly48={forecast.hourly48 ?? forecast.hourly} today={forecast.today} />
+            </div>
+            <div className="panel-grid reveal" style={{ '--i': 5 }}>
               <DailyForecast daily={forecast.daily} unit={unit} />
               <div className="panel-stack">
                 <ConditionsPanel forecast={forecast} unit={unit} />
                 <SunMoonPanel today={forecast.today} currentTime={forecast.current.time} />
                 <AirQualityCard airQuality={airQuality} />
               </div>
+            </div>
+            <div className="reveal" style={{ '--i': 6 }}>
+              <ClimatePanel
+                series={history.series}
+                loading={history.loading}
+                today={forecast.today}
+                currentTime={forecast.current.time}
+                unit={unit}
+              />
             </div>
           </>
         )}

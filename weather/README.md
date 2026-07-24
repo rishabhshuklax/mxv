@@ -1,6 +1,20 @@
 # Ultimate Weather
 
-A weather webapp built to feel alive: an animated sky that matches the conditions outside, minute-by-minute precipitation, plain-language insights, an hourly temperature curve, and a full sun & moon almanac — all with no API key.
+A weather webapp built to feel alive — and the only one with a **memory** and **judgment**. Past: 85 years of local climate records. Present: an animated sky matching the conditions outside. Future: it doesn't just show the forecast, it tells you the best time to use it.
+
+## What makes it unique
+
+**Climate memory (since 1940)** — powered by Open-Meteo's historical archive, computed live for the exact location:
+- Warming stripes (Ed Hawkins-style) rendered from every year's mean temperature *here*
+- "Is today normal?" — today's high vs. the local normal, with a percentile ("6° hotter than a normal July 24 here — hotter than 97% of them since 1940")
+- All-time record high/low for today's calendar date, with the year it happened
+- "This day in 1950 / 1975 / 2000 / 2015" — actual conditions on this date in past decades
+- The ~85-year daily series is fetched once per location, cached on-device for 30 days
+
+**Best time to… (next 48 h)** — an activity planner that scores every forecast hour and recommends a concrete window with a reason:
+- Running, cycling, picnic, stargazing (cloud-cover aware), line-dry laundry
+- Honest "No good window" when the weather won't cooperate
+- Golden-hour times for photographers, with a light-quality hint from sunset cloud cover
 
 ## Features
 
