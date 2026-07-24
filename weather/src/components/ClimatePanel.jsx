@@ -1,5 +1,21 @@
-import { stripesData, calendarDayStats, sampleYearsOnDay, HISTORY_START_YEAR } from '../lib/history.js';
+import { stripesData, calendarDayStats, sampleYearsOnDay, rankToday, HISTORY_START_YEAR } from '../lib/history.js';
 import { formatTemp, formatTempDelta, formatFullDate } from '../lib/format.js';
+import { renderStripesCard, shareCanvas, slugify } from '../lib/share.js';
+
+function rankLine(rank, dayLabel) {
+  if (!rank || rank.rank > 10) return null;
+  if (rank.rank === 1) return `Hottest ${dayLabel} on record here — and the record starts in ${HISTORY_START_YEAR}.`;
+  if (rank.rank === 2) return `Only one ${dayLabel} since ${HISTORY_START_YEAR} was hotter than this.`;
+  if (rank.rank === 3) return `Only two ${dayLabel}s since ${HISTORY_START_YEAR} were hotter than this.`;
+  return `#${rank.rank} hottest ${dayLabel} here since ${HISTORY_START_YEAR}.`;
+}
+
+// Honesty gate: only claim "warming" when the recent years actually run warm.
+function pickHeadline(city, anomalies) {
+  const recent = anomalies.slice(-10);
+  const recentMean = recent.reduce((s, a) => s + a.anomaly, 0) / recent.length;
+  return recentMean > 0.3 ? `${city} is warming. Here's the receipt.` : `This isn't a gradient. It's ${city}'s temperature record.`;
+}
 
 // Diverging blue→red for warming-stripe anomalies, Ed Hawkins style.
 function stripeColor(anomaly, maxAbs) {
@@ -12,7 +28,7 @@ function stripeColor(anomaly, maxAbs) {
   return `rgba(214, 66, 57, ${a.toFixed(2)})`;
 }
 
-export default function ClimatePanel({ series, loading, today, currentTime, unit }) {
+export default function ClimatePanel({ series, loading, today, currentTime, unit, cityName, themeKey }) {
   if (loading) {
     return (
       <section className="panel climate">
@@ -44,10 +60,35 @@ export default function ClimatePanel({ series, loading, today, currentTime, unit
       } than ${stats.anomaly > 0 ? stats.percentile : 100 - stats.percentile}% of them since ${HISTORY_START_YEAR}.`;
   }
 
+  const rank = rankToday(series, monthDay, today?.max ?? null);
+  const rankText = rankLine(rank, dayLabel);
+
+  async function handleShareStripes() {
+    const canvas = renderStripesCard({
+      city: cityName ?? '',
+      anomalies: stripes.anomalies,
+      maxAbs: stripes.maxAbs,
+      verdict: verdict ?? `Every year in ${cityName} since ${firstYear}, one stripe each.`,
+      themeKey: themeKey ?? 'clear',
+      shareUrl: 'ultimate-weather-mocha.vercel.app',
+    });
+    await shareCanvas(
+      canvas,
+      `stripes-${slugify(cityName)}.png`,
+      `${pickHeadline(cityName ?? 'My city', stripes.anomalies)} · https://ultimate-weather-mocha.vercel.app`,
+    );
+  }
+
   return (
     <section className="panel climate">
-      <h2 className="panel-title">Climate memory · since {HISTORY_START_YEAR}</h2>
+      <div className="climate-head">
+        <h2 className="panel-title">Climate memory · since {HISTORY_START_YEAR}</h2>
+        <button type="button" className="tm-share climate-share" onClick={handleShareStripes}>
+          Show my stripes
+        </button>
+      </div>
 
+      {rankText && <p className="climate-rank">{rankText}</p>}
       {verdict && <p className="climate-verdict">{verdict}</p>}
 
       <div className="stripes-wrap" role="img" aria-label={`Warming stripes for this location, ${firstYear} to ${lastYear}`}>

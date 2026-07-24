@@ -19,7 +19,13 @@ import { normalizeForecast, normalizeAirQuality } from './lib/normalize.js';
 import { backgroundTheme } from './lib/weatherCode.js';
 import { buildInsights } from './lib/insights.js';
 import { formatTemp } from './lib/format.js';
-import { buildSeries, readHistoryCache, writeHistoryCache, HISTORY_START_YEAR } from './lib/history.js';
+import { buildSeries, readHistoryCache, writeHistoryCache, stripesData, calendarDayStats, HISTORY_START_YEAR } from './lib/history.js';
+import { warmCardFonts, renderTodayCard, shareCanvas, slugify } from './lib/share.js';
+import { formatFullDate } from './lib/format.js';
+import TimeMachinePanel from './components/TimeMachinePanel.jsx';
+import DuelPanel from './components/DuelPanel.jsx';
+import { wallClockMinutes } from './lib/astro.js';
+
 import {
   loadSavedLocations,
   addSavedLocation,
@@ -30,6 +36,18 @@ import {
   loadLastLocation,
   saveLastLocation,
 } from './lib/storage.js';
+
+const SHARE_URL_SHORT = 'ultimate-weather-mocha.vercel.app';
+
+// Warm the whole scene when the sun is within ~40 minutes of the horizon.
+function isGoldenHour(forecast) {
+  const today = forecast?.today;
+  const now = wallClockMinutes(forecast?.current?.time);
+  if (!today?.sunrise || !today?.sunset || now === null) return false;
+  const rise = wallClockMinutes(today.sunrise);
+  const set = wallClockMinutes(today.sunset);
+  return (now >= rise - 15 && now <= rise + 40) || (now >= set - 40 && now <= set + 15);
+}
 
 export default function App() {
   const [location, setLocation] = useState(null);
@@ -67,6 +85,17 @@ export default function App() {
       setTheme(backgroundTheme(normalized.current.weatherCode, normalized.current.isDay));
       setStatus('ready');
       saveLastLocation(targetLocation);
+      // Deep-linkable cities: shares land on the same place.
+      try {
+        const params = new URLSearchParams();
+        params.set('name', targetLocation.name);
+        params.set('lat', targetLocation.latitude.toFixed(3));
+        params.set('lon', targetLocation.longitude.toFixed(3));
+        if (targetLocation.country) params.set('country', targetLocation.country);
+        window.history.replaceState(null, '', `?${params.toString()}`);
+      } catch {
+        // History API unavailable (sandboxed iframe) — non-essential.
+      }
     } catch {
       if (!background) {
         setStatus('error');
@@ -113,6 +142,21 @@ export default function App() {
   }, [loadWeatherFor]);
 
   useEffect(() => {
+    // Priority: shared deep link → last viewed city → geolocation.
+    const params = new URLSearchParams(window.location.search);
+    const lat = Number.parseFloat(params.get('lat'));
+    const lon = Number.parseFloat(params.get('lon'));
+    if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+      loadWeatherFor({
+        id: `${lat.toFixed(2)},${lon.toFixed(2)}`,
+        name: params.get('name')?.slice(0, 60) || 'Shared location',
+        admin1: '',
+        country: params.get('country')?.slice(0, 60) ?? '',
+        latitude: lat,
+        longitude: lon,
+      });
+      return;
+    }
     const last = loadLastLocation();
     if (last) {
       loadWeatherFor(last);
@@ -162,6 +206,43 @@ export default function App() {
     return buildInsights({ ...forecast, airQuality, unit });
   }, [status, forecast, airQuality, unit]);
 
+  // Pre-warm the Inter faces the share cards draw with, so the canvas can be
+  // rendered synchronously inside the tap that triggers the share sheet.
+  useEffect(() => {
+    if (status === 'ready') warmCardFonts();
+  }, [status]);
+
+  const handleShareToday = useCallback(async () => {
+    if (!forecast || !location) return;
+    const stripes = history.series ? stripesData(history.series) : null;
+    const monthDay = forecast.current.time.slice(5, 10);
+    const dayLabel = formatFullDate(forecast.current.time).split(', ')[1] ?? '';
+    const stats = history.series ? calendarDayStats(history.series, monthDay, forecast.today?.max ?? null) : null;
+    let percentileLine = null;
+    if (stats?.percentile != null) {
+      percentileLine =
+        stats.percentile >= 50
+          ? `Hotter than ${stats.percentile}% of ${dayLabel}s since ${HISTORY_START_YEAR}`
+          : `Colder than ${100 - stats.percentile}% of ${dayLabel}s since ${HISTORY_START_YEAR}`;
+    }
+    const canvas = renderTodayCard({
+      dateLine: formatFullDate(forecast.current.time).replace(', ', ' · '),
+      temp: formatTemp(forecast.current.temperature, unit),
+      condition: forecast.current.info.label,
+      city: [location.name, location.country].filter(Boolean).join(', '),
+      percentileLine,
+      anomalies: stripes?.anomalies,
+      maxAbs: stripes?.maxAbs,
+      themeKey: theme,
+      shareUrl: SHARE_URL_SHORT,
+    });
+    await shareCanvas(
+      canvas,
+      `weather-${slugify(location.name)}.png`,
+      percentileLine ? `${location.name}, ${formatTemp(forecast.current.temperature, unit)} — ${percentileLine.toLowerCase()} · https://${SHARE_URL_SHORT}` : `${location.name} right now · https://${SHARE_URL_SHORT}`,
+    );
+  }, [forecast, location, history.series, theme, unit]);
+
   function handleUnitChange(next) {
     setUnit(next);
     saveUnit(next);
@@ -182,9 +263,10 @@ export default function App() {
 
   const isSaved = location ? saved.some((item) => item.id === location.id) : false;
   const ready = status === 'ready' && forecast && location;
+  const golden = ready && (theme === 'clear' || theme === 'cloud') && isGoldenHour(forecast);
 
   return (
-    <div className={`app theme-${status === 'ready' ? theme : 'clear'}`}>
+    <div className={`app theme-${status === 'ready' ? theme : 'clear'} ${golden ? 'golden-hour' : ''}`}>
       {ready && (
         <SkyCanvas
           group={theme}
@@ -233,6 +315,7 @@ export default function App() {
                 onToggleSave={handleToggleSave}
                 onRefresh={() => loadWeatherFor(location, { background: true })}
                 refreshing={refreshing}
+                onShareToday={handleShareToday}
               />
             </div>
             <div className="reveal" style={{ '--i': 1 }}>
@@ -262,7 +345,15 @@ export default function App() {
                 today={forecast.today}
                 currentTime={forecast.current.time}
                 unit={unit}
+                cityName={location.name}
+                themeKey={theme}
               />
+            </div>
+            <div className="reveal" style={{ '--i': 7 }}>
+              <TimeMachinePanel series={history.series} cityName={location.name} unit={unit} />
+            </div>
+            <div className="reveal" style={{ '--i': 8 }}>
+              <DuelPanel location={location} forecast={forecast} unit={unit} />
             </div>
           </>
         )}

@@ -22,11 +22,40 @@ export function readHistoryCache(latitude, longitude, storage = window.localStor
   }
 }
 
+const MAX_CACHED_CITIES = 3;
+
+// Each series is ~0.5-1 MB of JSON; keep only the most recent few cities so
+// deep-linked visitors never hit the ~5 MB origin quota.
+function evictOldest(storage) {
+  if (typeof storage.length !== 'number' || typeof storage.key !== 'function') return;
+  const entries = [];
+  for (let i = 0; i < storage.length; i += 1) {
+    const key = storage.key(i);
+    if (!key?.startsWith(CACHE_PREFIX)) continue;
+    try {
+      entries.push({ key, fetchedAt: JSON.parse(storage.getItem(key))?.fetchedAt ?? 0 });
+    } catch {
+      entries.push({ key, fetchedAt: 0 });
+    }
+  }
+  entries
+    .sort((a, b) => a.fetchedAt - b.fetchedAt)
+    .slice(0, Math.max(0, entries.length - MAX_CACHED_CITIES))
+    .forEach((entry) => storage.removeItem(entry.key));
+}
+
 export function writeHistoryCache(latitude, longitude, series, storage = window.localStorage, now = Date.now()) {
   try {
     storage.setItem(historyCacheKey(latitude, longitude), JSON.stringify({ fetchedAt: now, series }));
+    evictOldest(storage);
   } catch {
     // Quota exceeded or private mode — the feature just refetches next time.
+    try {
+      evictOldest(storage);
+      storage.setItem(historyCacheKey(latitude, longitude), JSON.stringify({ fetchedAt: now, series }));
+    } catch {
+      // Still failing — give up quietly.
+    }
   }
 }
 
@@ -123,6 +152,33 @@ export function calendarDayStats(series, monthDay, todayMax, { windowDays = 3, n
   }
 
   return { normalHigh, anomaly, percentile, recordHigh, recordLow, sampleYears: samples.length };
+}
+
+// Time machine: the exact weather on one date of the record.
+export function dayInHistory(series, isoDate) {
+  const i = series?.time?.indexOf(isoDate) ?? -1;
+  if (i < 0) return null;
+  const hi = series.tmax[i];
+  const lo = series.tmin[i];
+  if (hi == null || lo == null) return null;
+  return { date: isoDate, hi, lo, precip: series.precip[i] ?? null };
+}
+
+// Rank of today's high among every occurrence of this exact calendar day.
+// rank 1 = hottest {day} on record. Returns null with sparse records.
+export function rankToday(series, monthDay, todayMax) {
+  if (todayMax == null || !series?.time?.length) return null;
+  let total = 0;
+  let hotter = 0;
+  for (let i = 0; i < series.time.length; i += 1) {
+    if (series.time[i].slice(5, 10) !== monthDay) continue;
+    const hi = series.tmax[i];
+    if (hi == null) continue;
+    total += 1;
+    if (hi > todayMax) hotter += 1;
+  }
+  if (total < 30) return null;
+  return { rank: hotter + 1, total };
 }
 
 // "This day in ..." — the exact calendar day in a handful of past years.

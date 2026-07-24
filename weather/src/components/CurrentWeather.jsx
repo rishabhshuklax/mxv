@@ -41,7 +41,7 @@ function greeting(isoTime) {
   return 'Good night';
 }
 
-export default function CurrentWeather({ location, forecast, unit, isSaved, onToggleSave, onRefresh, refreshing }) {
+export default function CurrentWeather({ location, forecast, unit, isSaved, onToggleSave, onRefresh, refreshing, onShareToday }) {
   const { current, today } = forecast;
   const targetTemp = unit === 'F' ? celsiusToFahrenheit(current.temperature) : current.temperature;
   const displayTemp = useAnimatedNumber(targetTemp);
@@ -61,6 +61,20 @@ export default function CurrentWeather({ location, forecast, unit, isSaved, onTo
           </p>
         </div>
         <div className="hero-actions">
+          {onShareToday && (
+            <button type="button" className="icon-btn" onClick={onShareToday} title="Share today" aria-label="Share today's weather as an image">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                  d="M12 3v12M12 3l-4 4M12 3l4 4M5 13v6h14v-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          )}
           <button
             type="button"
             className={`icon-btn ${refreshing ? 'icon-btn--spin' : ''}`}

@@ -11,6 +11,14 @@ A weather webapp built to feel alive — and the only one with a **memory** and 
 - "This day in 1950 / 1975 / 2000 / 2015" — actual conditions on this date in past decades
 - The ~85-year daily series is fetched once per location, cached on-device for 30 days
 
+**Share cards** — one tap renders a 1080×1350 image on-device (no server): your city's warming-stripes card ("{city} is warming. Here's the receipt.") or a today-vs-history card with the percentile badge. Web Share sheet on mobile, download elsewhere.
+
+**Time machine** — pick any date since 1940 (your birthday, say) and get that day's actual weather in your city, instantly, from the cached archive. "Was it raining the day you were born? The sky remembers."
+
+**City duel** — pit your city against a rival: one verdict line ("Delhi is 14° hotter than London today. Shorts win.") plus a stat-by-stat table, shareable.
+
+**Deep links** — every city view is a URL (`?name=…&lat=…&lon=…`); shares land exactly where you were.
+
 **Best time to… (next 48 h)** — an activity planner that scores every forecast hour and recommends a concrete window with a reason:
 - Running, cycling, picnic, stargazing (cloud-cover aware), line-dry laundry
 - Honest "No good window" when the weather won't cooperate

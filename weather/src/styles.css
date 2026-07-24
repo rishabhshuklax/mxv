@@ -1869,3 +1869,208 @@ input {
   overflow: visible;
   margin-top: 0.1rem;
 }
+
+/* Golden hour: within ~40 minutes of sunrise/sunset the scene warms up. */
+.app.golden-hour {
+  --bg-1: #83503a;
+  --bg-2: #131022;
+  --accent: #ffb168;
+}
+
+/* ---------- Time machine, duel, share ---------- */
+.tm-prompt {
+  margin: -0.2rem 0 0.9rem;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+}
+
+.tm-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tm-input {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+  min-width: 0;
+  flex: 1;
+  max-width: 260px;
+  color-scheme: dark;
+  transition: border-color 0.25s ease;
+}
+
+.tm-input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.tm-share {
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 0.55rem 1.05rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.tm-share:hover {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.tm-share:active {
+  transform: scale(0.96);
+}
+
+.tm-miss {
+  margin: 0.7rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+}
+
+.tm-result {
+  margin-top: 1rem;
+  animation: fadeUp 0.45s backwards;
+}
+
+.tm-date {
+  font-size: 0.85rem;
+  color: var(--text-faint);
+  margin-bottom: 0.35rem;
+}
+
+.tm-temps {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.tm-hi {
+  font-size: 2.6rem;
+  font-weight: 250;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tm-lo {
+  font-size: 1.4rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.tm-rain {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.duel-search {
+  position: relative;
+  max-width: 340px;
+}
+
+.duel-search .tm-input {
+  width: 100%;
+  max-width: none;
+}
+
+.duel-results {
+  top: calc(100% + 6px);
+}
+
+.duel-spinner {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+}
+
+.duel-verdict {
+  margin: 0 0 0.9rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.duel-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-bottom: 1rem;
+}
+
+.duel-row {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.duel-row:nth-child(even) {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.duel-row--head {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+}
+
+.duel-city {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.duel-label {
+  color: var(--text-dim);
+}
+
+.duel-strong {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.duel-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.duel-reset {
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: var(--text-dim);
+  border-radius: 999px;
+  padding: 0.55rem 1.05rem;
+  font-size: 0.85rem;
+}
+
+.climate-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.climate-share {
+  margin-top: -0.3rem;
+}
+
+.climate-rank {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+}

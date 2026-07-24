@@ -6,6 +6,8 @@ import {
   stripesData,
   calendarDayStats,
   sampleYearsOnDay,
+  dayInHistory,
+  rankToday,
   readHistoryCache,
   writeHistoryCache,
 } from './history.js';
@@ -74,6 +76,23 @@ test('sampleYearsOnDay pulls the exact day from requested years', () => {
   assert.equal(rows.length, 2);
   assert.equal(rows[0].year, 1955);
   assert.ok(Math.abs(rows[0].hi - 20.25) < 1e-9);
+});
+
+test('dayInHistory returns the exact date or null', () => {
+  const series = syntheticSeries();
+  const hit = dayInHistory(series, '1975-07-15');
+  assert.equal(hit.date, '1975-07-15');
+  assert.ok(Math.abs(hit.hi - 21.25) < 1e-9);
+  assert.equal(dayInHistory(series, '1930-01-01'), null);
+});
+
+test('rankToday counts strictly hotter days above todays high', () => {
+  const series = syntheticSeries(); // highs on 07-15: 20.00 .. 21.95 over 40 years
+  const hottest = rankToday(series, '07-15', 25);
+  assert.deepEqual(hottest, { rank: 1, total: 40 });
+  const third = rankToday(series, '07-15', 21.86); // beaten by 1989 (21.95) and 1988 (21.90)
+  assert.equal(third.rank, 3);
+  assert.equal(rankToday(series, '07-15', null), null);
 });
 
 test('history cache round-trips and expires', () => {
