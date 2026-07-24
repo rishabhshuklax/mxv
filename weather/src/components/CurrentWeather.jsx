@@ -102,7 +102,9 @@ export default function CurrentWeather({ location, forecast, unit, isSaved, onTo
       </div>
 
       <div className="hero-main">
-        <WeatherIcon icon={current.info.icon} size={116} />
+        <div className="hero-icon">
+          <WeatherIcon icon={current.info.icon} size={116} />
+        </div>
         <div className="hero-temp">
           {Math.round(displayTemp)}
           <span className="hero-degree">°</span>

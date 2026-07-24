@@ -21,13 +21,14 @@ export default function NowcastCard({ nowcast }) {
         <span className="nowcast-summary">{summary}</span>
       </div>
       <div className="nowcast-bars">
-        {nowcast.steps.map((step) => (
+        {nowcast.steps.map((step, i) => (
           <div key={step.time} className="nowcast-slot" title={`${formatClockTime(step.time)} · ${step.precipitation.toFixed(1)} mm`}>
             <div
               className="nowcast-bar"
               style={{
                 height: `${Math.max(8, (step.precipitation / max) * 100)}%`,
                 opacity: step.precipitation > 0.02 ? 1 : 0.25,
+                animationDelay: `${i * 55}ms`,
               }}
             />
           </div>

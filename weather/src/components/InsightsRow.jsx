@@ -14,8 +14,8 @@ export default function InsightsRow({ insights }) {
   if (!insights?.length) return null;
   return (
     <div className="insights-row" role="list" aria-label="Weather insights">
-      {insights.map((insight) => (
-        <div className="insight-chip" role="listitem" key={insight.kind + insight.text}>
+      {insights.map((insight, i) => (
+        <div className="insight-chip" role="listitem" key={insight.kind + insight.text} style={{ '--c': i }}>
           <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" className={`insight-icon insight-icon--${insight.kind}`}>
             <path
               d={ICON_PATHS[insight.kind] ?? ICON_PATHS.dry}

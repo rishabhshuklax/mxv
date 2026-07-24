@@ -76,7 +76,7 @@ export const ACTIVITIES = [
   },
   {
     key: 'laundry',
-    label: 'Line-dry laundry',
+    label: 'Laundry',
     spanHours: 4,
     score(h) {
       if (h.isDay === false) return 0;

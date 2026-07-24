@@ -43,7 +43,7 @@ function WindCompass({ direction }) {
       <text x="15" y="52" textAnchor="middle" className="compass-label">W</text>
       <text x="81" y="52" textAnchor="middle" className="compass-label">E</text>
       {direction != null && (
-        <g className="compass-needle" style={{ transform: `rotate(${direction + 180}deg)` }}>
+        <g className="compass-needle" style={{ '--dir': `${direction + 180}deg`, transform: 'rotate(var(--dir))' }}>
           <path d="M48 20 L53 46 L48 42 L43 46 Z" className="needle-head" />
           <path d="M48 76 L52 52 L48 55 L44 52 Z" className="needle-tail" />
         </g>

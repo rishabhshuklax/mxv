@@ -73,13 +73,14 @@ export default function HourlyPanel({ hourly, unit }) {
                 />
               );
             })}
-            <path d={area} fill="url(#tempFill)" />
-            <path d={line} className="chart-line" />
+            <path d={area} fill="url(#tempFill)" className="chart-area" />
+            <path d={line} className="chart-line" pathLength="1" />
             {points.map((p, i) => (
               <text key={`t${hourly[i].time}`} className="chart-temp" x={p.x} y={p.y - 10} textAnchor="middle">
                 {formatTemp(hourly[i].temperature, unit)}
               </text>
             ))}
+            <circle className="chart-now-pulse" cx={points[0].x} cy={points[0].y} r={4} />
             <circle className="chart-now" cx={points[0].x} cy={points[0].y} r={4} />
           </svg>
           <div className="hourly-icons">

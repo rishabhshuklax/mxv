@@ -51,7 +51,7 @@ export default function ClimatePanel({ series, loading, today, currentTime, unit
       {verdict && <p className="climate-verdict">{verdict}</p>}
 
       <div className="stripes-wrap" role="img" aria-label={`Warming stripes for this location, ${firstYear} to ${lastYear}`}>
-        <svg viewBox={`0 0 ${stripes.anomalies.length} 40`} preserveAspectRatio="none" className="stripes">
+        <svg viewBox={`0 0 ${stripes.anomalies.length} 40`} preserveAspectRatio="none" className="stripes stripes--wipe">
           {stripes.anomalies.map((a, i) => (
             <rect key={a.year} x={i} y="0" width="1.02" height="40" fill={stripeColor(a.anomaly, stripes.maxAbs)}>
               <title>{`${a.year}: ${a.anomaly >= 0 ? '+' : ''}${a.anomaly.toFixed(2)}°C vs early-record average`}</title>

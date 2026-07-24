@@ -20,7 +20,7 @@ export default function DailyForecast({ daily, unit }) {
           const widthPct = ((day.max - day.min) / span) * 100;
           const open = openDate === day.date;
           return (
-            <div key={day.date} className={`daily-item ${open ? 'daily-item--open' : ''}`}>
+            <div key={day.date} className={`daily-item ${open ? 'daily-item--open' : ''}`} style={{ '--row': index }}>
               <button
                 type="button"
                 className="daily-row"

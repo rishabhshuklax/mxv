@@ -59,8 +59,8 @@ export default function SkyCanvas({ group, isDay, weatherCode, windSpeed }) {
       }
     }
     if (group === 'cloud' || group === 'rain' || group === 'storm' || group === 'snow') {
-      for (let i = 0; i < 6; i += 1) {
-        clouds.push({ x: Math.random() * 1.4 - 0.2, y: rand(0.04, 0.34), s: rand(130, 280), sp: rand(4, 13), a: rand(0.05, 0.11) });
+      for (let i = 0; i < 7; i += 1) {
+        clouds.push({ x: Math.random() * 1.4 - 0.2, y: rand(0.04, 0.36), s: rand(140, 300), sp: rand(9, 26), a: rand(0.08, 0.16) });
       }
     }
     if (group === 'fog') {
@@ -71,6 +71,9 @@ export default function SkyCanvas({ group, isDay, weatherCode, windSpeed }) {
 
     let flash = 0;
     let nextFlash = performance.now() + rand(3000, 9000);
+    // Occasional shooting star on clear nights — a one-second streak.
+    let meteor = null;
+    let nextMeteor = performance.now() + rand(4000, 10000);
     let last = performance.now();
 
     function drawCloud(cx, cy, size, alpha) {
@@ -102,6 +105,31 @@ export default function SkyCanvas({ group, isDay, weatherCode, windSpeed }) {
         ctx.beginPath();
         ctx.arc(star.x * w, star.y * h, star.r, 0, Math.PI * 2);
         ctx.fill();
+      }
+
+      if (stars.length >= 100) {
+        if (!meteor && now > nextMeteor) {
+          meteor = { x: rand(0.15, 0.85) * w, y: rand(0.05, 0.3) * h, vx: rand(280, 420), vy: rand(120, 200), life: 1 };
+          nextMeteor = now + rand(9000, 20000);
+        }
+        if (meteor) {
+          meteor.life -= dt * 1.4;
+          meteor.x += meteor.vx * dt;
+          meteor.y += meteor.vy * dt;
+          if (meteor.life <= 0) meteor = null;
+          else {
+            const tail = 70 * meteor.life;
+            const gradient = ctx.createLinearGradient(meteor.x, meteor.y, meteor.x - tail, meteor.y - tail * 0.45);
+            gradient.addColorStop(0, `rgba(255,255,255,${0.85 * meteor.life})`);
+            gradient.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.moveTo(meteor.x, meteor.y);
+            ctx.lineTo(meteor.x - tail, meteor.y - tail * 0.45);
+            ctx.stroke();
+          }
+        }
       }
 
       for (const cloud of clouds) {

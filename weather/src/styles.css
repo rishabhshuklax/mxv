@@ -1063,7 +1063,7 @@ input {
 /* ---------- Planner ---------- */
 .planner-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 0.75rem;
 }
 
@@ -1428,7 +1428,7 @@ input {
 
 @media (min-width: 760px) {
   .planner-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -1448,4 +1448,424 @@ input {
   .climate-grid {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+/* ==========================================================================
+   Motion & polish pass (v4)
+   Entrance animations use fill-mode: backwards so elements settle into
+   their natural styles; everything animates transform/opacity only.
+   ========================================================================== */
+
+/* --- overflow hardening (grid/flex blowout on narrow phones) --- */
+.planner-card,
+.detail-card,
+.details-grid > *,
+.climate-grid > div,
+.daily-row > *,
+.panel,
+.app-main {
+  min-width: 0;
+}
+
+.planner-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- aurora: two slow drifting light fields behind everything --- */
+.app::before,
+.app::after {
+  content: '';
+  position: fixed;
+  width: 90vmax;
+  height: 90vmax;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform;
+}
+
+.app::before {
+  top: -46vmax;
+  left: -28vmax;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 13%, transparent), transparent 62%);
+  animation: auroraA 26s ease-in-out infinite alternate;
+}
+
+.app::after {
+  bottom: -50vmax;
+  right: -30vmax;
+  background: radial-gradient(circle, rgba(93, 128, 255, 0.1), transparent 60%);
+  animation: auroraB 34s ease-in-out infinite alternate;
+}
+
+@keyframes auroraA {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(9vmax, 6vmax, 0) scale(1.18); }
+}
+
+@keyframes auroraB {
+  from { transform: translate3d(0, 0, 0) scale(1.1); }
+  to { transform: translate3d(-8vmax, -5vmax, 0) scale(0.95); }
+}
+
+/* --- panel & title polish --- */
+.panel,
+.hero {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 4%, rgba(255, 255, 255, 0.085)), rgba(255, 255, 255, 0.045));
+  box-shadow: var(--shadow-panel), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.panel-title::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  margin-right: 8px;
+  vertical-align: 3px;
+  background: var(--accent);
+  opacity: 0.9;
+  transition: background 1s ease;
+}
+
+/* --- hero: floating icon inside a soft accent halo --- */
+.hero-icon {
+  position: relative;
+  display: flex;
+  animation: floatY 6s ease-in-out infinite;
+}
+
+.hero-icon::before {
+  content: '';
+  position: absolute;
+  inset: -14%;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 22%, transparent), transparent 68%);
+  z-index: -1;
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+/* --- weather icon micro-motion --- */
+.weather-icon .wi-rays {
+  animation-duration: 16s;
+}
+
+.weather-icon .wi-sun {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sunPulse 4.2s ease-in-out infinite;
+}
+
+@keyframes sunPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.weather-icon .wi-cloud {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cloudBob 5.6s ease-in-out infinite;
+}
+
+@keyframes cloudBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(1.6px); }
+}
+
+.weather-icon .wi-drop-line {
+  animation: rainFall 1.15s linear infinite;
+}
+
+.weather-icon .wi-drop-line:nth-of-type(2) { animation-delay: 0.28s; }
+.weather-icon .wi-drop-line:nth-of-type(3) { animation-delay: 0.56s; }
+.weather-icon .wi-drop-line:nth-of-type(4) { animation-delay: 0.84s; }
+
+@keyframes rainFall {
+  0% { transform: translateY(-3px); opacity: 0; }
+  18% { opacity: 1; }
+  78% { opacity: 1; }
+  100% { transform: translateY(9px); opacity: 0; }
+}
+
+.weather-icon .wi-fog-line {
+  animation: fogSlide 3.6s ease-in-out infinite alternate;
+}
+
+.weather-icon .wi-fog-line:nth-of-type(2) { animation-delay: 0.5s; }
+.weather-icon .wi-fog-line:nth-of-type(3) { animation-delay: 1s; }
+
+@keyframes fogSlide {
+  from { transform: translateX(-2.5px); }
+  to { transform: translateX(2.5px); }
+}
+
+/* --- hourly chart: line draws in, area fades, now-dot pulses --- */
+.chart-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: drawLine 1.5s 0.15s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes drawLine {
+  to { stroke-dashoffset: 0; }
+}
+
+.chart-area {
+  opacity: 0;
+  animation: fadeIn 0.9s 1s ease-out forwards;
+}
+
+.chart-temp {
+  opacity: 0;
+  animation: fadeIn 0.6s 1.1s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+.chart-now-pulse {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nowPulse 2.4s ease-out infinite;
+}
+
+@keyframes nowPulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  70% { transform: scale(2.8); opacity: 0; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+/* --- nowcast bars grow up with a stagger --- */
+.nowcast-bar {
+  transform-origin: bottom;
+  animation: growBar 0.65s cubic-bezier(0.2, 0.7, 0.3, 1.25) backwards;
+}
+
+@keyframes growBar {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+/* --- daily rows cascade in; range bars sweep --- */
+.daily-item {
+  animation: fadeUp 0.5s backwards;
+  animation-delay: calc(var(--row, 0) * 55ms);
+}
+
+.daily-bar-fill {
+  transform-origin: left;
+  animation: growBarX 0.7s ease-out backwards;
+  animation-delay: calc(var(--row, 0) * 55ms + 0.25s);
+}
+
+@keyframes growBarX {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* --- planner cards: icon tiles, entrance, tomorrow pill, golden rows --- */
+.planner-card {
+  animation: fadeUp 0.5s backwards;
+  animation-delay: calc(var(--i, 0) * 65ms);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+@media (hover: hover) {
+  .planner-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+}
+
+.planner-tile {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.planner-tile--run { background: rgba(255, 138, 118, 0.16); color: #ff9d8a; }
+.planner-tile--cycle { background: rgba(98, 224, 161, 0.14); color: #7ee8b2; }
+.planner-tile--picnic { background: rgba(255, 209, 102, 0.15); color: #ffd97a; }
+.planner-tile--stargaze { background: rgba(176, 148, 255, 0.16); color: #c2a9ff; }
+.planner-tile--laundry { background: rgba(110, 195, 255, 0.15); color: #8fcaff; }
+.planner-tile--golden { background: rgba(255, 209, 102, 0.18); color: #ffd166; }
+
+.planner-window {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  font-size: 1.02rem;
+}
+
+.planner-pill {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+}
+
+.golden-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.golden-row {
+  font-size: 0.92rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.golden-tag {
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ffd166;
+  width: 34px;
+  flex-shrink: 0;
+}
+
+/* --- insight & climate chips slide in --- */
+.insight-chip {
+  animation: chipIn 0.5s backwards;
+  animation-delay: calc(var(--c, 0) * 75ms);
+}
+
+.climate-chip {
+  animation: chipIn 0.5s backwards;
+}
+
+.climate-chip:nth-child(2) { animation-delay: 80ms; }
+.climate-chip:nth-child(3) { animation-delay: 160ms; }
+.climate-chip:nth-child(4) { animation-delay: 240ms; }
+
+@keyframes chipIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* --- warming stripes wipe in from 1940 --- */
+.stripes--wipe {
+  clip-path: inset(0 100% 0 0);
+  animation: stripesWipe 1.6s 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes stripesWipe {
+  to { clip-path: inset(0 0 0 0); }
+}
+
+/* --- compass needle swings to its bearing --- */
+.compass-needle {
+  animation: needleIn 1.2s cubic-bezier(0.3, 1.4, 0.4, 1) backwards;
+}
+
+@keyframes needleIn {
+  from { transform: rotate(calc(var(--dir, 0deg) - 80deg)); }
+  to { transform: rotate(var(--dir, 0deg)); }
+}
+
+/* --- sun dot breathes, AQI marker pops --- */
+.sun-dot-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: glowBreathe 3.6s ease-in-out infinite;
+}
+
+@keyframes glowBreathe {
+  0%, 100% { transform: scale(1); opacity: 0.75; }
+  50% { transform: scale(1.35); opacity: 0.35; }
+}
+
+.aqi-marker {
+  animation: popIn 0.6s 0.35s cubic-bezier(0.3, 1.6, 0.4, 1) backwards;
+}
+
+@keyframes popIn {
+  from { transform: translate(-50%, -50%) scale(0); }
+  to { transform: translate(-50%, -50%) scale(1); }
+}
+
+/* --- touch feedback on tappables --- */
+.icon-btn:active,
+.locate-btn:active,
+.saved-chip:active,
+.retry-btn:active,
+.unit-toggle button:active,
+.search-result:active,
+.daily-row:active,
+.planner-card:active {
+  transform: scale(0.97);
+}
+
+/* --- scroll-driven reveals where supported (Chrome/Android) --- */
+@supports (animation-timeline: view()) {
+  .reveal,
+  .planner-card,
+  .climate-chip,
+  .daily-item {
+    animation-name: fadeUp;
+    animation-duration: auto;
+    animation-delay: 0s;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 45%;
+  }
+}
+
+/* Score chip pinned to the card corner so activity labels never truncate. */
+.planner-card {
+  position: relative;
+}
+
+.planner-score {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+}
+
+.planner-card-head {
+  padding-right: 2.4rem;
+}
+
+.planner-label {
+  font-size: 0.86rem;
+}
+
+/* Head row = tile + score; the label sits on its own full-width line. */
+.planner-card-head {
+  justify-content: space-between;
+  padding-right: 0;
+}
+
+.planner-score {
+  position: static;
+}
+
+.planner-label {
+  white-space: normal;
+  overflow: visible;
+  margin-top: 0.1rem;
 }
