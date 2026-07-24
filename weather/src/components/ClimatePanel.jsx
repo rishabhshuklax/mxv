@@ -64,11 +64,19 @@ export default function ClimatePanel({ series, loading, today, currentTime, unit
   const rankText = rankLine(rank, dayLabel);
 
   async function handleShareStripes() {
+    // Compact card verdict — the panel's full sentence overflows two lines.
+    let cardVerdict = `Every year in ${cityName} since ${firstYear}, one stripe each.`;
+    if (stats?.percentile != null) {
+      cardVerdict =
+        stats.percentile >= 50
+          ? `Today is hotter than ${stats.percentile}% of every ${dayLabel} here since ${HISTORY_START_YEAR}.`
+          : `Today is colder than ${100 - stats.percentile}% of every ${dayLabel} here since ${HISTORY_START_YEAR}.`;
+    }
     const canvas = renderStripesCard({
       city: cityName ?? '',
       anomalies: stripes.anomalies,
       maxAbs: stripes.maxAbs,
-      verdict: verdict ?? `Every year in ${cityName} since ${firstYear}, one stripe each.`,
+      verdict: cardVerdict,
       themeKey: themeKey ?? 'clear',
       shareUrl: 'ultimate-weather-mocha.vercel.app',
     });

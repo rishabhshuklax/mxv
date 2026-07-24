@@ -55,6 +55,7 @@ export default function DuelPanel({ location, forecast, unit }) {
 
   // A new home city resets the duel.
   useEffect(() => {
+    pickSeq.current += 1; // kill any in-flight pick from the previous city
     setRival(null);
     setRivalForecast(null);
     setError(null);
@@ -163,6 +164,7 @@ export default function DuelPanel({ location, forecast, unit }) {
               type="button"
               className="duel-reset"
               onClick={() => {
+                pickSeq.current += 1;
                 setRival(null);
                 setRivalForecast(null);
               }}

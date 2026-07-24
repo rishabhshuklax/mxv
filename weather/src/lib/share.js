@@ -295,8 +295,8 @@ export async function shareCanvas(canvas, filename, text) {
         await navigator.share({ files: [file], text });
         return 'shared';
       } catch (err) {
-        if (err?.name === 'AbortError') return 'cancelled';
-        // NotAllowed/InvalidState/etc — fall through to download.
+        if (err?.name === 'AbortError' || err?.name === 'InvalidStateError') return 'cancelled';
+        // NotAllowed/etc — fall through to download.
       }
     }
     download(blob, filename);
@@ -316,7 +316,7 @@ export async function shareText(text, url) {
         await navigator.share({ text, url });
         return 'shared';
       } catch (err) {
-        if (err?.name === 'AbortError') return 'cancelled';
+        if (err?.name === 'AbortError' || err?.name === 'InvalidStateError') return 'cancelled';
       }
     }
     try {
