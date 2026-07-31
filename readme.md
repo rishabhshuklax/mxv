@@ -1,6 +1,10 @@
 ## MxV
 A movie streaming api + web-client + ios-client
 
+Includes the **Everything Graph** — a Neo4j-backed living knowledge graph
+that grows and reorganizes itself as the API is used. See
+[docs/everything-graph.md](docs/everything-graph.md).
+
 ##### To set up this project, follow these steps:
 
 1. Clone the repository to your local machine using the command: `git clone git@github.com:rishabhshuklax/mxv.git`.

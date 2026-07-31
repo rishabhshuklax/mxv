@@ -6,6 +6,8 @@ const MovieController = require('./controller/MovieController'),
   authenticateToken = require('./middleware/authenticate');
 const userInPathMiddleware = require('./middleware/userInPath.js');
 const DiscoverController = require('./controller/DiscoverController.js');
+const GraphController = require('./controller/GraphController.js');
+const observeMiddleware = require('./middleware/observe.js');
 
 // initialize mongodb
 require('./init/db.js');
@@ -13,6 +15,9 @@ require('./init/db.js');
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+// the Everything Graph learns from ordinary traffic (no-op without NEO4J_URI)
+app.use(observeMiddleware);
 
 const PORT = process.env.PORT || 3001;
 
@@ -25,7 +30,8 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     time: new Date().toISOString(),
     tmdbConfigured: Boolean(process.env.TMDB_API_KEY),
-    mongoConfigured: Boolean(process.env.MONGODB_URI)
+    mongoConfigured: Boolean(process.env.MONGODB_URI),
+    graphConfigured: Boolean(process.env.NEO4J_URI)
   });
 });
 
@@ -91,6 +97,44 @@ app.get('/api/tonight', (req, res) => {
 app.get('/api/person/:id', (req, res) => {
   MovieController.getPerson(req, res);
 });
+
+// Everything Graph routes — a living knowledge graph that grows as the API
+// is used. See docs/everything-graph.md.
+
+  // report an event the passive observer can't see (playback, ratings)
+  app.post('/api/graph/observe', (req, res) => {
+    GraphController.observe(req, res);
+  });
+
+  // the graph's heartbeat: size, hottest things, newest arrivals
+  app.get('/api/graph/pulse', (req, res) => {
+    GraphController.pulse(req, res);
+  });
+
+  // the authenticated user's personal neighbourhood
+  app.get('/api/graph/me', authenticateToken, (req, res) => {
+    GraphController.me(req, res);
+  });
+
+  // why are these two things connected? (explainable recommendations)
+  app.get('/api/graph/why/:from/:to', (req, res) => {
+    GraphController.why(req, res);
+  });
+
+  // strongest living connections of any thing
+  app.get('/api/graph/related/:key', (req, res) => {
+    GraphController.related(req, res);
+  });
+
+  // one thing and its vitals
+  app.get('/api/graph/thing/:key', (req, res) => {
+    GraphController.thing(req, res);
+  });
+
+  // maintenance: checkpoint decay, prune withered edges, sweep orphans
+  app.post('/api/graph/gardener', (req, res) => {
+    GraphController.gardener(req, res);
+  });
 
 // User routes
 
