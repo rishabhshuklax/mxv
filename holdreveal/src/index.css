@@ -1,0 +1,166 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/bricolage-latin.woff2') format('woff2');
+}
+
+@theme {
+  --color-ink: #050505;
+  --color-paper: #fafaf7;
+  --color-checker-a: #1a1a1c;
+  --color-checker-b: #101012;
+  --color-torch: #ffc833;
+  --color-danger: #ff5c5c;
+  --color-fg: #f2f2f0;
+  --color-fg-dim: #9a9a96;
+
+  --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+  overscroll-behavior-y: none;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+/* Brand texture: the transparency checkerboard */
+.checker {
+  background-color: var(--color-checker-b);
+  background-image:
+    linear-gradient(45deg, var(--color-checker-a) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--color-checker-a) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--color-checker-a) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--color-checker-a) 75%);
+  background-size: 16px 16px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+}
+
+.checker-fine {
+  background-color: var(--color-checker-b);
+  background-image:
+    linear-gradient(45deg, var(--color-checker-a) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--color-checker-a) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--color-checker-a) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--color-checker-a) 75%);
+  background-size: 8px 8px;
+  background-position:
+    0 0,
+    0 4px,
+    4px -4px,
+    -4px 0;
+}
+
+/* Light checkerboard, used behind transparent previews on paper */
+.checker-paper {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #eceae4 25%, transparent 25%),
+    linear-gradient(-45deg, #eceae4 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #eceae4 75%),
+    linear-gradient(-45deg, transparent 75%, #eceae4 75%);
+  background-size: 12px 12px;
+  background-position:
+    0 0,
+    0 6px,
+    6px -6px,
+    -6px 0;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Visible focus for keyboard users only */
+:focus-visible {
+  outline: 2px solid var(--color-torch);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Oversized slider thumbs (≥28px) with torch accent */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  background: transparent;
+  touch-action: none;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: #2a2a2e;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -12px;
+  border-radius: 50%;
+  background: var(--color-torch);
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+input[type='range']::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: #2a2a2e;
+}
+input[type='range']::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-torch);
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes hr-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: hr-fade-up 200ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up {
+    animation: none;
+  }
+}
